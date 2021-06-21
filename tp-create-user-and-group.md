@@ -150,7 +150,7 @@ Dans cet exercice, vous allez :
 
 1. Revenir à l'écran **Groups - All groups**, cliquer sur l'entrée représentant le groupe **IT Cloud Administrators**, puis afficher l'écran de ses **Members**. Vérifier que  **az104-01a-aaduser1-$myname** apparait bien dans la liste des membres du groupes.
 
-    >**Note**: Vous pouvez observer des délais poru la mises à jour des membres des groupes dynamiques. Pour accélerer la miste à jour, aller sur l'écran du groupe, afficher l'écran  **Dynamic membership rules**, **Edit** la règle listée dans le bloc de texte **Rule syntax** en ajoutant un espace à la fin et sauvegarder la modification.
+    >**Note**: Vous pouvez observer des délais pour la mise à jour des membres des groupes dynamiques. Pour accélerer la miste à jour, aller sur l'écran du groupe, afficher l'écran  **Dynamic membership rules**, **Edit** la règle listée dans le bloc de texte **Rule syntax** en ajoutant un espace à la fin et sauvegarder la modification.
 
 1. Revenir à l'écran **Groups - All groups**, cliquer sur l'entrée représentant le groupe **IT System Administrators**, puis afficher l'écran de ses **Members**. Vérifier que  **az104-01a-aaduser2-$myname** apparait bien dans la liste des membres du groupes. 
 
