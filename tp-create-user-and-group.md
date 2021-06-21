@@ -5,7 +5,7 @@
 Dans cet exercice, vous allez : 
 
 + Tache 1: Créer et configurer des utilisateurs  Azure AD
-+ Tache 2: Créer des groupes Azure AD avec des assygnations et de l'ajout de membre dynamique
++ Tache 2: Créer des groupes Azure AD avec des assignations et de l'ajout de membre dynamique
 + Tache 3: Créer un locataire Azure  Active Directory (AD)
 + Tache 4: Gérer les utilisateurs invités dans Azure AD 
 
@@ -75,7 +75,7 @@ Dans cet exercice, vous allez :
 
 1. Se déconnecter de l'utilistaur az104-01a-aaduser1-$myname dans le portail Azure et fermer la fenêtre de navigation privé.
 
-## Tache 2: Créer des groupes Azure AD avec des assygnations et de l'ajout de membre dynamique
+## Tache 2: Créer des groupes Azure AD avec des assignations et de l'ajout de membre dynamique
 
 1. Revenir sur portail où vous êtes connecté avec votre compte utilisateur  **user account**, revenir à l'écran  **Overview** du locataire Azure AD et, dans la section **Manage**, cliquer sur **Licenses**.
 
