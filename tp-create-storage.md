@@ -277,7 +277,7 @@ Bonus :
 1. Lister tous les groupes de ressources créé pendant cet exercice en exécutant la commande suivante :
 
    ```powershell
-   Get-AzResourceGroup -Name 'az104-07-$myname*'
+   Get-AzResourceGroup -Name 'az104-07*'
    ```
 
 1. Supprimer tous les groupes de ressources créé pendant cet exercice en exécutant la commande suivante:
