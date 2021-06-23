@@ -28,3 +28,4 @@ az vm open-port \
   --port 80 \
   --resource-group tp1-vanessa \
   --name node-vm
+
