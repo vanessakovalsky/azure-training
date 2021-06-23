@@ -8,12 +8,13 @@ Les ressources à crée sont les suivantes :
 * Groupe de ressource az cli, nommé tp1-$myname (en remplaçant $myname par votre nom)
 * Une VM Linux avec Nginx et NodeJs installé et le port 80 ouvert sur cette VM
 
-Une fois la VM créé il faudra déployer le code depuis le dépôt Github et lancer les commandes suivantes pour que l'application soit utilisable
+Une fois la VM créé il faudra déployer le code depuis le dépôt Github et lancer les commandes suivantes (depuis le dossier cloner) pour que l'application soit utilisable
 ```bash
 curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
 sudo apt-get install -y nodejs
 sudo npm install -g pm2
 sudo apt-get install -y nginx
+sudo pm2 start -f index.js
 ```
 
 * Puis il faudra remplacer le contenu du fichier /etc/nginx/sites-available/default par le contenu suivant 
