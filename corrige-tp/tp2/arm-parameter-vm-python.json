@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "value": "vanessa"
+    },
+    "adminPasswordOrKey": {
+      "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDZJZnfvdZNafUXje5mLuDphTKgI68f6eTQB1Sum/vD0WqyNRW+Rkeewn1AhPr+ym0wFeRtB/0d2qZ0VC01Xtr46+5XUMmZom154dummJYV1/WSOLI2tynNblkX4AbJRqUdKCY92tjmQR3z4wixLJE1AYUTVPhbcybNsorGrRZVW1IyqQ9hkRjFc9Yc4VUb58qoeXwawTDxO7N5z3hHqqGzfzQi8HB6XGQwukyFh63F0aTPETrBPJ9RL4TIEHIXnSe4p0sZbAC1k3Wi6pXHS6cAn8kFwdQAr7Yzwrlqr6xPHx8omnHLFHadG1NG4BoMQGf0oslBRvTyuDU5FW50YU1"
+    },
+    "dnsLabelPrefix": {
+      "value": "vanessakovalsky"
+    },
+    "dnsLabelPrefix1": {
+      "value": "vanessakovalsky1"
+    },
+    "OSVersion": {
+      "value": "18.04-LTS"
+    },
+    "imagePublisher": {
+      "value": "Canonical"
+    },
+    "imageOffer": {
+      "value": "UbuntuServer"
+    },
+    "customData": {
+      "value": "#cloud-config\npackage_upgrade: true\npackages:\n  - python3 \n  - python3-dev\n  - python3-pip\n  - nginx\n  - git\n\nruncmd:\n  # clone GitHub Repo into myapp directory\n  - git clone https://github.com/Azure-Samples/azure-stack-hub-flask-hello-world.git\n  - cd azure-stack-hub-flask-hello-world\n  # Install app\n  - python3 - pip3 install -r requirements.txt\n  - export FLASK_APP=application.py\n  - flask run -h 0.0.0.0"
+    }
+  }
+}
