@@ -11,9 +11,6 @@
     "dnsLabelPrefix": {
       "value": "vanessakovalsky"
     },
-    "dnsLabelPrefix1": {
-      "value": "vanessakovalsky1"
-    },
     "OSVersion": {
       "value": "18.04-LTS"
     },
@@ -24,7 +21,7 @@
       "value": "UbuntuServer"
     },
     "customData": {
-      "value": "#cloud-config\npackage_upgrade: true\npackages:\n  - python3 \n  - python3-dev\n  - python3-pip\n  - nginx\n  - git\n\nruncmd:\n  # clone GitHub Repo into myapp directory\n  - git clone https://github.com/Azure-Samples/azure-stack-hub-flask-hello-world.git\n  - cd azure-stack-hub-flask-hello-world\n  # Install app\n  - python3 - pip3 install -r requirements.txt\n  - export FLASK_APP=application.py\n  - flask run -h 0.0.0.0"
+      "value": "#cloud-config\npackage_upgrade: true\npackages:\n  - python3 \n  - python3-dev\n  - python3-pip\n  - python3-flask\n    - nginx\n  - git\n\nruncmd:\n  # clone GitHub Repo into myapp directory\n  - git clone https://github.com/Azure-Samples/azure-stack-hub-flask-hello-world.git\n  - cd azure-stack-hub-flask-hello-world\n  # Install app\n  - python3 - pip3 install -r requirements.txt\n  - export FLASK_APP=application.py\n  - flask run -h 0.0.0.0"
     }
   }
 }
