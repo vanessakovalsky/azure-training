@@ -1,0 +1,1 @@
+https://github.com/MicrosoftLearning/AZ400-DesigningandImplementingMicrosoftDevOpsSolutions/blob/master/Instructions/Labs/AZ400_M13_Azure_Deployments_Using_Resource_Manager_Templates.md 
