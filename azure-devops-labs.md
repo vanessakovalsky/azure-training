@@ -41,3 +41,4 @@
 [Exemple de template](https://github.com/microsoft/azure-pipelines-yaml/tree/master/templates)
 [Azure DevOps Serveur](https://learn.microsoft.com/fr-fr/azure/devops/server/install/get-started?view=azure-devops-2022)
 [Création de ticket automatique depuis Jira avec Zappier](https://zapier.com/apps/azure-devops/integrations/jira/4870/create-azure-devops-work-items-from-new-jira-issues) 
+[L'ensemble des labs Azure](https://learn.microsoft.com/fr-fr/training/browse/?products=azure)
