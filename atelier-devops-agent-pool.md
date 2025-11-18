@@ -166,6 +166,7 @@
 ---
 
 - Ajoutez trois tâches "Command line":
+- 
       - Tâche 1:
         - Display name: "Echo agent info"
         - Script: `echo Bonjour depuis l'agent $(Agent.Name)`
