@@ -49,6 +49,7 @@ kubectl config set-context --current --namespace=webapp
 ## Étape 3 : Déployer PostgreSQL (10 min)
 
 ### 3.1 Créer le StorageClass (si nécessaire)
+* Syntaxe unix
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: storage.k8s.io/v1
@@ -62,6 +63,21 @@ reclaimPolicy: Retain
 allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
 EOF
+```
+* Syntaxe powershell:
+```powershell
+@"
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: managed-premium
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+"@ | kubectl apply -f -
 ```
 
 ### 3.2 Créer le Secret pour PostgreSQL
