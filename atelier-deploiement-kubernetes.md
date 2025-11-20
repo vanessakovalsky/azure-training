@@ -17,11 +17,6 @@ Déployer une application web complète avec base de données sur AKS
 RESOURCE_GROUP="FormationOrsysMalakoff"
 LOCATION="France Central"
 AKS_CLUSTER="demokubernetes"
-
-# Créer le resource group
-az group create \
-  --name $RESOURCE_GROUP \
-  --location $LOCATION
 ```
 
 ### Récupérer les credentials
