@@ -492,15 +492,4 @@ kubectl delete namespace webapp
 # Supprimer l'ingress controller
 helm uninstall nginx-ingress -n ingress-nginx
 kubectl delete namespace ingress-nginx
-
-# Supprimer le cluster (si nécessaire)
-az aks delete \
-  --resource-group $RESOURCE_GROUP \
-  --name $AKS_CLUSTER \
-  --yes --no-wait
-
-# Supprimer le resource group
-az group delete \
-  --name $RESOURCE_GROUP \
-  --yes --no-wait
 ```
