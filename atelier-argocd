@@ -1,1027 +1,180 @@
-# Atelier : ArgoCD Déploiement
-
-## Objectif
-Utiliser ArgoCD pour le déploiement GitOps sur AKS
+# Atelier pas à pas — Déployer sur AKS avec Argo CD depuis Azure DevOps
 
 
-## Étape 1 : Installer ArgoCD (10 min)
+**Pré-requis** :
 
-### 1.1 Créer le namespace
-```bash
-kubectl create namespace argocd
-```
-
-### 1.2 Installer ArgoCD
-```bash
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-# Attendre que tous les pods soient prêts
-kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
-```
-
-### 1.3 Installer ArgoCD CLI
-```bash
-# Linux
-VERSION=$(curl --silent "https://api.github.com/repos/argoproj/argo-cd/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
-curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/$VERSION/argocd-linux-amd64
-sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-rm argocd-linux-amd64
-
-# macOS
-brew install argocd
-
-# Vérifier l'installation
-argocd version --client
-```
-
-### 1.4 Exposer ArgoCD Server
-```bash
-# Option 1: Port Forward (pour test)
-kubectl port-forward svc/argocd-server -n argocd 8080:443 &
-
-# Option 2: LoadBalancer (recommandé pour production)
-kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-
-# Attendre l'IP externe
-kubectl get svc argocd-server -n argocd -w
-```
-
-### 1.5 Récupérer le mot de passe initial
-```bash
-ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d)
-
-echo "ArgoCD Admin Password: $ARGOCD_PASSWORD"
-```
-
-### 1.6 Se connecter à ArgoCD
-```bash
-# Via LoadBalancer
-ARGOCD_SERVER=$(kubectl get svc argocd-server -n argocd \
-  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-# Ou via port-forward
-ARGOCD_SERVER="localhost:8080"
-
-# Login
-argocd login $ARGOCD_SERVER --username admin --password $ARGOCD_PASSWORD --insecure
-
-# Changer le mot de passe
-argocd account update-password
-```
+* Argo CD est déjà installé sur le cluster AKS.
+* Un projet Azure DevOps existe et les stagiaires ont accès au projet (repo code + permissions pour créer Service Connections).
+* Les stagiaires ont accès à un terminal avec `az`, `kubectl`, `helm`, `git`, `yq` et `docker` ou utilisent les agents Microsoft hébergés dans les pipelines.
 
 ---
 
-## Étape 2 : Préparer le repository GitOps (15 min)
+## Objectifs pédagogiques
 
-### 2.1 Créer la structure du repository
+À la fin de l'atelier, les stagiaires seront capables de :
+
+1. Construire et pousser une image Docker vers ACR depuis Azure DevOps.
+2. Scanner l'image avec Trivy dans la pipeline et échouer si vulnérabilités critiques existent.
+3. Valider les manifests Helm localement avec Conftest (policies Rego).
+4. Mettre à jour un repo GitOps (Helm Chart / values.yaml) depuis le pipeline.
+5. Observer Argo CD déployer automatiquement la nouvelle version sur AKS.
+6. Comprendre la complémentarité CI (Conftest/Trivy) et enforcement runtime (Gatekeeper).
+
+---
+
+## Plan de l'atelier
+
+1. Préparations & prérequis (15 min)
+2. Structure du repo GitOps & Helm chart (30 min)
+3. Pipeline Azure DevOps complet (YAML) (45 min)
+4. Intégration Trivy + Conftest (30 min)
+5. Gatekeeper : installation & contraintes (30 min)
+6. Exercices pratiques & corrections (30–45 min)
+7. Q&A, retours et bonnes pratiques (15 min)
+
+Durée totale estimée : ~3h — adaptable.
+
+---
+
+# 1) Préparations & prérequis (exécuté par les stagiaires)
+
+**Compte/permissions** :
+
+* Accès au projet Azure DevOps (rights: create pipelines, créer Service Connections si possible).
+* Accès à un repo Git (GitHub, Azure Repos) pour le `gitops-infra` (privé ou public).
+* ACR existant (`monacr`), ou instructions pour en créer.
+* AKS opérationnel avec ArgoCD installé.
+
+**Vérifications rapides (commands)** :
+
 ```bash
-mkdir -p argocd-demo
-cd argocd-demo
-
-# Structure GitOps
-mkdir -p {apps,infrastructure,projects}/{base,overlays/{dev,staging,production}}
+# vérifier kubernetes access
+kubectl get pods -n argocd
+# vérifier login az
+az account show
+# vérifier helm
+helm version
 ```
 
-### 2.2 Créer l'application de base
-```bash
-# Base application
-cat <<'EOF' > apps/base/deployment.yaml
+Si `kubectl get pods -n argocd` retourne les pods ArgoCD en `Running`, on est prêt.
+
+---
+
+# 2) GitOps repo — structure et fichiers (atelier guidé)
+
+Créez un repo nommé `gitops-infra` avec cette structure :
+
+```
+gitops-infra/
+├─ charts/
+│  └─ mon-app/
+│     ├ Chart.yaml
+│     ├ values.yaml
+│     └ templates/
+│         └ deployment.yaml
+└─ apps/
+   └─ argocd-application.yaml  # optional: Application CR to register app in ArgoCD
+
+policies/
+└─ k8s/
+   ├ no-root.rego
+   └ require-resources.rego
+```
+
+### Exemple minimal `Chart.yaml`
+
+```yaml
+apiVersion: v2
+name: mon-app
+version: 0.1.0
+description: Chart demo pour atelier
+```
+
+### Exemple minimal `values.yaml`
+
+```yaml
+image:
+  repository: monacr.azurecr.io/mon-app
+  tag: "latest"
+replicaCount: 2
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+```
+
+### Exemple `templates/deployment.yaml`
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-app
+  name: {{ include "mon-app.fullname" . }}
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: demo-app
+      app: {{ include "mon-app.name" . }}
   template:
     metadata:
       labels:
-        app: demo-app
+        app: {{ include "mon-app.name" . }}
     spec:
       containers:
-      - name: app
-        image: nginxdemos/hello:latest
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 100m
-            memory: 128Mi
-EOF
-
-cat <<'EOF' > apps/base/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: demo-app
-spec:
-  type: ClusterIP
-  selector:
-    app: demo-app
-  ports:
-  - port: 80
-    targetPort: 80
-EOF
-
-cat <<'EOF' > apps/base/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - deployment.yaml
-  - service.yaml
-
-commonLabels:
-  managed-by: argocd
-EOF
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 80
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
 ```
 
-### 2.3 Créer les overlays pour chaque environnement
-```bash
-# Dev overlay
-cat <<'EOF' > apps/overlays/dev/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: dev
-
-bases:
-  - ../../base
-
-replicas:
-  - name: demo-app
-    count: 1
-
-namePrefix: dev-
-
-commonLabels:
-  environment: dev
-EOF
-
-# Staging overlay
-cat <<'EOF' > apps/overlays/staging/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: staging
-
-bases:
-  - ../../base
-
-replicas:
-  - name: demo-app
-    count: 2
-
-namePrefix: staging-
-
-commonLabels:
-  environment: staging
-EOF
-
-# Production overlay
-cat <<'EOF' > apps/overlays/production/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: production
-
-bases:
-  - ../../base
-
-replicas:
-  - name: demo-app
-    count: 3
-
-namePrefix: prod-
-
-commonLabels:
-  environment: production
-
-patchesStrategicMerge:
-  - patches.yaml
-EOF
-
-cat <<'EOF' > apps/overlays/production/patches.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: demo-app
-spec:
-  template:
-    spec:
-      containers:
-      - name: app
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 200m
-            memory: 256Mi
-EOF
-```
-
-### 2.4 Initialiser Git et pousser
-```bash
-# Initialiser Git
-git init
-git add .
-git commit -m "Initial GitOps structure"
-
-# Créer un repository sur GitHub
-# Remplacer <YOUR_GITHUB_USERNAME> par votre nom d'utilisateur
-GITHUB_USER="<YOUR_GITHUB_USERNAME>"
-GITHUB_REPO="argocd-demo"
-
-# Créer le repo via GitHub CLI (si installé)
-gh repo create $GITHUB_REPO --public --source=. --remote=origin --push
-
-# Ou manuellement:
-# 1. Créer le repo sur github.com
-# 2. Exécuter:
-git remote add origin https://github.com/$GITHUB_USER/$GITHUB_REPO.git
-git branch -M main
-git push -u origin main
-```
+> **Exercice** : initialiser le repo, commit et push. Vérifier que ArgoCD peut lire ce repo (si privé, configurer la clé SSH dans ArgoCD: `Settings -> Repositories`).
 
 ---
 
-## Étape 3 : Connecter le repository à ArgoCD (5 min)
+# 3) Pipeline Azure DevOps (YAML) — *Hands-on*
 
-### 3.1 Ajouter le repository (public)
-```bash
-argocd repo add https://github.com/$GITHUB_USER/$GITHUB_REPO.git
+Nous fournissons un pipeline prêt à l'emploi. Les stagiaires le collent dans le repo applicatif (ou dans un repo pipeline) sous `azure-pipelines.yml`.
+
+> **But** : Builder l'image, la scanner (Trivy), renderer le chart, valider policies, mettre à jour `values.yaml` dans `gitops-infra`.
+
+### `azure-pipelines.yml` (version complète pour l'atelier)
+
+```yaml
+trigger:
+  - main
+
+variables:
+  imageName: "mon-app"
+  containerRegistry: "monacr.azurecr.io"
+  gitopsRepo: "git@github.com:mon-org/gitops-infra.git"
+  gitopsBranch: "main"
+  helmChartPath: "charts/mon-app"
+  valuesFile: "charts/mon-app/values.yaml"
+  aksNamespace: "production"
+  tag: "$(Build.BuildId)"
+  trivyFailSeverity: "CRITICAL,HIGH"
+
+stages:
+  - stage: Build_and_Scan
+    displayName: "Build image & Security Scans"
+    jobs:
+      - job: Build
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+            persistCredentials: true
+
+          - task: Docker@2
+            displayName: "Build and push image to ACR"
+            inputs:
+              containerRegistry: "ACR-Service-Connection"
+              repository: "$(imageName)"
+              command: buildAndPush
+              Dockerfile: Dockerfile
 ```
-
-### 3.2 Pour un repository privé
-```bash
-# Avec HTTPS
-argocd repo add https://github.com/$GITHUB_USER/$GITHUB_REPO.git \
-  --username $GITHUB_USER \
-  --password $GITHUB_TOKEN
-
-# Ou avec SSH
-argocd repo add git@github.com:$GITHUB_USER/$GITHUB_REPO.git \
-  --ssh-private-key-path ~/.ssh/id_rsa
-```
-
-### 3.3 Vérifier le repository
-```bash
-argocd repo list
-```
-
----
-
-## Étape 4 : Créer un AppProject (5 min)
-
-### 4.1 Créer le fichier du projet
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: demo-project
-  namespace: argocd
-spec:
-  description: Demo project for ArgoCD training
-  
-  sourceRepos:
-    - 'https://github.com/$GITHUB_USER/$GITHUB_REPO.git'
-  
-  destinations:
-    - namespace: 'dev'
-      server: https://kubernetes.default.svc
-    - namespace: 'staging'
-      server: https://kubernetes.default.svc
-    - namespace: 'production'
-      server: https://kubernetes.default.svc
-  
-  clusterResourceWhitelist:
-    - group: ''
-      kind: Namespace
-  
-  namespaceResourceWhitelist:
-    - group: 'apps'
-      kind: Deployment
-    - group: 'apps'
-      kind: StatefulSet
-    - group: ''
-      kind: Service
-    - group: ''
-      kind: ConfigMap
-    - group: ''
-      kind: Secret
-    - group: 'networking.k8s.io'
-      kind: Ingress
-  
-  roles:
-    - name: developer
-      description: Developer role
-      policies:
-        - p, proj:demo-project:developer, applications, get, demo-project/*, allow
-        - p, proj:demo-project:developer, applications, sync, demo-project/dev/*, allow
-        - p, proj:demo-project:developer, applications, sync, demo-project/staging/*, allow
-      groups:
-        - developers
-    
-    - name: operator
-      description: Operator role with full access
-      policies:
-        - p, proj:demo-project:operator, applications, *, demo-project/*, allow
-      groups:
-        - operators
-EOF
-```
-
-### 4.2 Vérifier le projet
-```bash
-kubectl get appproject -n argocd
-kubectl describe appproject demo-project -n argocd
-```
-
----
-
-## Étape 5 : Créer les Applications ArgoCD (10 min)
-
-### 5.1 Créer l'application Dev
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: demo-app-dev
-  namespace: argocd
-spec:
-  project: demo-project
-  
-  source:
-    repoURL: https://github.com/$GITHUB_USER/$GITHUB_REPO.git
-    targetRevision: HEAD
-    path: apps/overlays/dev
-  
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: dev
-  
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
-    syncOptions:
-      - CreateNamespace=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
-EOF
-```
-
-### 5.2 Créer l'application Staging
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: demo-app-staging
-  namespace: argocd
-spec:
-  project: demo-project
-  
-  source:
-    repoURL: https://github.com/$GITHUB_USER/$GITHUB_REPO.git
-    targetRevision: HEAD
-    path: apps/overlays/staging
-  
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: staging
-  
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        maxDuration: 3m
-EOF
-```
-
-### 5.3 Créer l'application Production (sync manuel)
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: demo-app-production
-  namespace: argocd
-spec:
-  project: demo-project
-  
-  source:
-    repoURL: https://github.com/$GITHUB_USER/$GITHUB_REPO.git
-    targetRevision: HEAD
-    path: apps/overlays/production
-  
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: production
-  
-  syncPolicy:
-    syncOptions:
-      - CreateNamespace=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        maxDuration: 3m
-  
-  # Pas de automated sync pour production
-EOF
-```
-
-### 5.4 Vérifier les applications
-```bash
-# Via CLI
-argocd app list
-
-# Via kubectl
-kubectl get applications -n argocd
-
-# Voir le statut détaillé
-argocd app get demo-app-dev
-argocd app get demo-app-staging
-argocd app get demo-app-production
-```
-
----
-
-## Étape 6 : Vérifier les déploiements (5 min)
-
-### 6.1 Vérifier les namespaces et pods
-```bash
-# Voir les namespaces créés
-kubectl get namespaces | grep -E "dev|staging|production"
-
-# Voir les pods dans chaque environnement
-kubectl get pods -n dev
-kubectl get pods -n staging
-kubectl get pods -n production
-
-# Voir les services
-kubectl get svc -n dev
-kubectl get svc -n staging
-kubectl get svc -n production
-```
-
-### 6.2 Accéder à l'UI ArgoCD
-```bash
-# Récupérer l'URL
-echo "ArgoCD UI: https://$ARGOCD_SERVER"
-echo "Username: admin"
-echo "Password: $ARGOCD_PASSWORD"
-
-# Ouvrir dans le navigateur et explorer les applications
-```
-
----
-
-## Étape 7 : Tester le GitOps workflow (10 min)
-
-### 7.1 Modifier l'application dans Git
-```bash
-cd argocd-demo
-
-# Modifier le nombre de replicas en dev
-cat <<'EOF' > apps/overlays/dev/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: dev
-
-bases:
-  - ../../base
-
-replicas:
-  - name: demo-app
-    count: 3  # Changé de 1 à 3
-
-namePrefix: dev-
-
-commonLabels:
-  environment: dev
-EOF
-
-# Commit et push
-git add .
-git commit -m "Scale dev to 3 replicas"
-git push
-```
-
-### 7.2 Observer la synchronisation automatique
-```bash
-# Attendre quelques secondes
-sleep 10
-
-# Vérifier que ArgoCD a détecté le changement
-argocd app get demo-app-dev
-
-# Voir les pods
-kubectl get pods -n dev
-
-# Observer dans l'UI ArgoCD
-```
-
-### 7.3 Tester un changement en production (sync manuel)
-```bash
-# Modifier la production
-cat <<'EOF' > apps/overlays/production/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: production
-
-bases:
-  - ../../base
-
-replicas:
-  - name: demo-app
-    count: 5  # Changé de 3 à 5
-
-namePrefix: prod-
-
-commonLabels:
-  environment: production
-
-patchesStrategicMerge:
-  - patches.yaml
-EOF
-
-# Commit et push
-git add .
-git commit -m "Scale production to 5 replicas"
-git push
-```
-
-### 7.4 Synchroniser manuellement la production
-```bash
-# Via CLI
-argocd app sync demo-app-production
-
-# Ou via UI: cliquer sur "Sync" dans l'interface
-
-# Vérifier
-kubectl get pods -n production
-```
-
----
-
-## Étape 8 : Configurer les webhooks pour sync instantané (5 min)
-
-### 8.1 Récupérer le webhook URL
-```bash
-# Le webhook URL est : https://<ARGOCD_SERVER>/api/webhook
-WEBHOOK_URL="https://$ARGOCD_SERVER/api/webhook"
-echo "Webhook URL: $WEBHOOK_URL"
-```
-
-### 8.2 Configurer le webhook sur GitHub
-1. Aller sur votre repository GitHub
-2. **Settings** > **Webhooks** > **Add webhook**
-3. Payload URL: `https://<ARGOCD_SERVER>/api/webhook`
-4. Content type: `application/json`
-5. Secret: (laisser vide pour un premier test)
-6. Events: Sélectionner "Just the push event"
-7. Active: coché
-8. **Add webhook**
-
-### 8.3 Tester le webhook
-```bash
-# Faire un changement simple
-echo "# GitOps Demo" > README.md
-git add README.md
-git commit -m "Add README"
-git push
-
-# Le sync devrait être instantané maintenant
-argocd app get demo-app-dev
-```
-
----
-
-## Étape 9 : Implémenter un rollback (5 min)
-
-### 9.1 Voir l'historique
-```bash
-# Via CLI
-argocd app history demo-app-dev
-
-# Voir les détails d'une révision
-argocd app manifests demo-app-dev --revision 1
-```
-
-### 9.2 Rollback vers une version précédente
-```bash
-# Rollback via CLI
-argocd app rollback demo-app-dev 1
-
-# Ou via Git (recommandé)
-git revert HEAD
-git push
-
-# Vérifier
-kubectl get pods -n dev
-argocd app get demo-app-dev
-```
-
----
-
-## Étape 10 : Configurer les notifications (8 min)
-
-### 10.1 Créer un ConfigMap pour les notifications
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-notifications-cm
-  namespace: argocd
-data:
-  service.slack: |
-    token: \$slack-token
-  
-  template.app-deployed: |
-    message: |
-      Application {{.app.metadata.name}} is now running new version.
-      Sync Status: {{.app.status.sync.status}}
-      Health Status: {{.app.status.health.status}}
-  
-  template.app-health-degraded: |
-    message: |
-      Application {{.app.metadata.name}} has degraded.
-      Health Status: {{.app.status.health.status}}
-  
-  trigger.on-deployed: |
-    - when: app.status.operationState.phase in ['Succeeded']
-      send: [app-deployed]
-  
-  trigger.on-health-degraded: |
-    - when: app.status.health.status == 'Degraded'
-      send: [app-health-degraded]
-EOF
-```
-
-### 10.2 Créer un Secret pour Slack (optionnel)
-```bash
-# Si vous avez un token Slack
-kubectl create secret generic argocd-notifications-secret \
-  --from-literal=slack-token=<YOUR_SLACK_TOKEN> \
-  -n argocd
-```
-
-### 10.3 Ajouter des annotations aux applications
-```bash
-kubectl patch app demo-app-dev -n argocd --type merge -p '{
-  "metadata": {
-    "annotations": {
-      "notifications.argoproj.io/subscribe.on-deployed.slack": "deployments",
-      "notifications.argoproj.io/subscribe.on-health-degraded.slack": "alerts"
-    }
-  }
-}'
-```
-
----
-
-## Étape 11 : Créer un ApplicationSet (7 min)
-
-### 11.1 Créer un ApplicationSet pour tous les environnements
-```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: demo-apps
-  namespace: argocd
-spec:
-  generators:
-  - list:
-      elements:
-      - env: dev
-        automated: "true"
-      - env: staging
-        automated: "true"
-      - env: production
-        automated: "false"
-  
-  template:
-    metadata:
-      name: 'demo-app-{{env}}'
-    spec:
-      project: demo-project
-      source:
-        repoURL: https://github.com/$GITHUB_USER/$GITHUB_REPO.git
-        targetRevision: HEAD
-        path: 'apps/overlays/{{env}}'
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{env}}'
-      syncPolicy:
-        syncOptions:
-          - CreateNamespace=true
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            maxDuration: 3m
-        automated:
-          prune: true
-          selfHeal: true
-EOF
-```
-
-### 11.2 Vérifier l'ApplicationSet
-```bash
-kubectl get applicationset -n argocd
-kubectl get applications -n argocd
-```
-
----
-
-## Étape 12 : Monitoring et troubleshooting (5 min)
-
-### 12.1 Voir les logs ArgoCD
-```bash
-# Application controller
-kubectl logs -n argocd deployment/argocd-application-controller -f
-
-# Repo server
-kubectl logs -n argocd deployment/argocd-repo-server -f
-
-# Server
-kubectl logs -n argocd deployment/argocd-server -f
-```
-
-### 12.2 Vérifier le statut de sync
-```bash
-# Toutes les applications
-argocd app list
-
-# Détails d'une application
-argocd app get demo-app-dev --refresh
-
-# Voir les ressources déployées
-argocd app resources demo-app-dev
-
-# Voir les différences
-argocd app diff demo-app-dev
-```
-
-### 12.3 Forcer une synchronisation
-```bash
-# Sync complet
-argocd app sync demo-app-dev
-
-# Sync avec prune
-argocd app sync demo-app-dev --prune
-
-# Hard refresh (ignore cache)
-argocd app get demo-app-dev --hard-refresh
-```
-
----
-
-## Points de vérification
-
-✅ ArgoCD installé et accessible via UI
-✅ Repository Git connecté à ArgoCD
-✅ AppProject créé avec permissions
-✅ Applications créées pour dev, staging, production
-✅ Dev et staging avec sync automatique
-✅ Production avec sync manuel
-✅ GitOps workflow fonctionne (push → sync)
-✅ Webhooks configurés pour sync instantané
-✅ Rollback testé et fonctionnel
-✅ Notifications configurées (optionnel)
-✅ ApplicationSet créé pour gérer plusieurs environnements
-
----
-
-## Bonus : Best Practices GitOps
-
-### 1. Structure de repository
-```
-repository/
-├── apps/                    # Applications
-│   ├── base/               # Configuration de base
-│   └── overlays/           # Environnements spécifiques
-├── infrastructure/         # Infrastructure (ingress, monitoring)
-│   ├── base/
-│   └── overlays/
-├── projects/               # ArgoCD AppProjects
-└── applicationsets/        # ApplicationSets
-```
-
-### 2. Stratégie de branches
-- **main**: Production
-- **staging**: Staging
-- **develop**: Development
-
-### 3. Promotion entre environnements
-```bash
-# Script de promotion
-#!/bin/bash
-# promote.sh
-
-SOURCE_ENV=$1
-TARGET_ENV=$2
-
-echo "Promoting from $SOURCE_ENV to $TARGET_ENV"
-
-# Copier la configuration
-cp -r apps/overlays/$SOURCE_ENV/* apps/overlays/$TARGET_ENV/
-
-# Commit et push
-git add apps/overlays/$TARGET_ENV/
-git commit -m "Promote from $SOURCE_ENV to $TARGET_ENV"
-git push
-
-# Sync ArgoCD
-argocd app sync demo-app-$TARGET_ENV
-
-# Utilisation:
-# ./promote.sh dev staging
-# ./promote.sh staging production
-```
-
-### 4. Sealed Secrets avec ArgoCD
-```bash
-# Installer Sealed Secrets
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/controller.yaml
-
-# Créer un sealed secret
-kubectl create secret generic my-secret \
-  --from-literal=password=supersecret \
-  --dry-run=client -o yaml | \
-  kubeseal -o yaml > sealed-secret.yaml
-
-# Commiter dans Git
-git add sealed-secret.yaml
-git commit -m "Add sealed secret"
-git push
-```
-
----
-
-## Troubleshooting commun
-
-### Problème: Application "OutOfSync"
-```bash
-# Vérifier les différences
-argocd app diff demo-app-dev
-
-# Forcer le sync
-argocd app sync demo-app-dev --force
-```
-
-### Problème: Sync échoue
-```bash
-# Voir les logs détaillés
-argocd app get demo-app-dev
-
-# Voir les événements
-kubectl get events -n dev --sort-by='.lastTimestamp'
-
-# Vérifier les manifests
-argocd app manifests demo-app-dev
-```
-
-### Problème: Webhook ne fonctionne pas
-```bash
-# Vérifier les logs du serveur
-kubectl logs -n argocd deployment/argocd-server | grep webhook
-
-# Tester manuellement
-curl -X POST https://$ARGOCD_SERVER/api/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"ref":"refs/heads/main"}'
-```
-
----
-
-## Nettoyage
-
-```bash
-# Supprimer les applications
-argocd app delete demo-app-dev --yes
-argocd app delete demo-app-staging --yes
-argocd app delete demo-app-production --yes
-
-# Ou via kubectl
-kubectl delete application demo-app-dev -n argocd
-kubectl delete application demo-app-staging -n argocd
-kubectl delete application demo-app-production -n argocd
-
-# Supprimer l'ApplicationSet
-kubectl delete applicationset demo-apps -n argocd
-
-# Supprimer le projet
-kubectl delete appproject demo-project -n argocd
-
-# Supprimer les namespaces
-kubectl delete namespace dev staging production
-
-# Désinstaller ArgoCD
-kubectl delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-kubectl delete namespace argocd
-
-# Supprimer le repository local
-cd ..
-rm -rf argocd-demo
-```
-
----
-
-## Conclusion
-
-### Compétences acquises
-
-#### Exercice 1
-- Création d'un cluster AKS
-- Déploiement d'applications multi-tiers
-- Configuration de PostgreSQL avec StatefulSet
-- Configuration d'Ingress
-
-#### Exercice 2
-- Gestion sécurisée des secrets avec Azure Key Vault
-- Configuration d'External Secrets Operator
-- Utilisation de ConfigMaps et Secrets
-- Rotation automatique des secrets
-
-#### Exercice 5
-- Configuration HPA (Horizontal Pod Autoscaler)
-- Installation et utilisation VPA
-- Configuration Cluster Autoscaler
-- Déploiement et utilisation de KEDA
-- Tests de charge
-
-#### Exercice 7
-- Création de pipelines CI/CD avec Azure DevOps
-- Intégration ACR et AKS
-- Déploiement multi-environnements
-- Approbations manuelles
-- Rollback automatique
-
-#### Exercice 10
-- Installation et configuration d'ArgoCD
-- GitOps workflow
-- Gestion multi-environnements
-- ApplicationSets
-- Rollback et notifications
-
----
-
-## Ressources supplémentaires
-
-### Documentation
-- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
-- [External Secrets Documentation](https://external-secrets.io/)
-- [Azure DevOps Pipelines](https://docs.microsoft.com/azure/devops/pipelines/)
-- [AKS Documentation](https://docs.microsoft.com/azure/aks/)
-
-### Outils utiles
-- [k9s](https://k9scli.io/) - UI terminal pour Kubernetes
-- [kubectx/kubens](https://github.com/ahmetb/kubectx) - Switch contextes/namespaces
-- [stern](https://github.com/stern/stern) - Tail logs de plusieurs pods
-- [kustomize](https://kustomize.io/) - Customization de manifests Kubernetes
-
-### Community
-- [CNCF Slack](https://slack.cncf.io/)
-- [ArgoCD Slack](https://argoproj.github.io/community/join-slack/)
-- [Kubernetes Forums](https://discuss.kubernetes.io/)
-
----
-
-## Prochaines étapes
-
-1. **Service Mesh**: Explorer Istio ou Linkerd
-2. **Observabilité avancée**: Jaeger, OpenTelemetry
-3. **Security**: Falco, OPA/Gatekeeper
-4. **Multi-cluster**: Cluster Federation, ArgoCD multi-cluster
-5. **Progressive Delivery**: Flagger pour canary deployments
-
----
-
-**Félicitations ! Vous avez terminé les exercices pratiques AKS ! 🎉**
