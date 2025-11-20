@@ -17,6 +17,9 @@ Déployer une application web complète avec base de données sur AKS
 RESOURCE_GROUP="FormationOrsysMalakoff"
 LOCATION="France Central"
 AKS_CLUSTER="demokubernetes"
+SUBSCRIPTION_ID="78b9a3d9-a777-4dad-8f72-5fc24f431d13"
+
+az login --tenant $SUBSCRIPTION_ID
 ```
 
 ### Récupérer les credentials
