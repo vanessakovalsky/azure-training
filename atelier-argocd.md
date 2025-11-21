@@ -14,6 +14,8 @@ L’atelier part du principe que :
 
 ---
 
+IP pour accéder aux : https://4.211.65.76/
+
 # 🧩 Partie 1 — Préparation du GitOps
 
 ## 📁 1. Structure du repo GitOps
