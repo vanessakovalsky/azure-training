@@ -124,7 +124,7 @@ kubectl apply -f myapp-argocd.yaml
 
 # 🧩 Partie 3 — Pipeline Azure DevOps (CI + GitOps)
 
-## azure-pipelines.yml (avec Helm, Trivy, Conftest)
+## azure-pipelines.yml (avec Helm)
 ```yaml
 trigger:
   - main
@@ -154,17 +154,6 @@ stages:
               tags: |
                 $(Build.BuildId)
 
-          - script: |
-              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-              ./bin/trivy image --exit-code 1 $(containerRegistry)/$(imageName):$(Build.BuildId)
-            displayName: "Scan image with Trivy"
-
-          - script: |
-              curl -L -o conftest.tar.gz https://github.com/open-policy-agent/conftest/releases/latest/download/conftest_Linux_x86_64.tar.gz
-              tar -xf conftest.tar.gz
-              ./conftest test k8s/
-            displayName: "Run Conftest policies"
-
           - checkout: gitops
             repository: gitopsRepo
             persistCredentials: true
@@ -181,56 +170,7 @@ stages:
 
 ---
 
-# 🧩 Partie 4 — Policies de Sécurité
-
-## 1. Conftest (OPA) – Exemple policy
-Créer `policy/no_latest.rego` :
-```rego
-package main
-
- deny[msg] {
-   input.kind == "Deployment"
-   image := input.spec.template.spec.containers[_].image
-   endswith(image, ":latest")
-   msg = "L'image ne doit pas utiliser le tag 'latest'"
- }
-```
-
-## 2. Gatekeeper – Policy (Optional)
-ConstraintTemplate :
-```yaml
-apiVersion: templates.gatekeeper.sh/v1beta1
-kind: ConstraintTemplate
-metadata:
-  name: k8sdenyprivileged
-spec:
-  crd:
-    spec:
-      names:
-        kind: K8sDenyPrivileged
-  targets:
-    - target: admission.k8s.gatekeeper.sh
-      rego: |
-        package k8sdenyprivileged
-        deny[msg] {
-          input.review.kind.kind == "Pod"
-          c := input.review.object.spec.containers[_]
-          c.securityContext.privileged == true
-          msg := "No privileged containers allowed"
-        }
-```
-
-Constraint :
-```yaml
-apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: K8sDenyPrivileged
-metadata:
-  name: no-privileged
-```
-
----
-
-# 🧪 Partie 5 — Exercices pratiques
+# 🧪 Partie 4 — Exercices pratiques
 
 ## Exercice 1 — Premier déploiement avec ArgoCD
 1. Modifier le `values.yaml` (ex : `replicaCount = 3`).
@@ -241,22 +181,9 @@ metadata:
 1. Modifier le code.
 2. Push → pipeline → GitOps → ArgoCD.
 
-## Exercice 3 — Forcer une violation de policy
-1. Mettre `image.tag: latest`.
-2. Exécuter le pipeline.
-3. Comprendre la violation Conftest.
-
-## Exercice 4 — Gatekeeper
-1. Déployer un Pod privileged.
-2. Observer le refus.
-
----
 
 # 🧯 Troubleshooting
 - **ArgoCD ne déploie pas** : vérifier la clé SSH du repo GitOps.
-- **Le pipeline échoue sur Trivy** : gérer les CVE via `–ignore-unfixed`.
-- **Conftest fail** : exécuter `conftest test apps/myapp` localement.
-- **Le cluster refuse les Pods** : vérifier les constraints Gatekeeper.
 
 ---
 
