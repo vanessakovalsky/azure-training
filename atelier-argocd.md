@@ -6,7 +6,6 @@ Cet atelier a pour but d’initier les stagiaires à :
 - L’intégration d’ArgoCD dans une chaîne CI/CD Azure DevOps.
 - Le déploiement d’applications sur **AKS** via un repo GitOps.
 - L’utilisation d’un chart **Helm**.
-- L’ajout de contrôles **DevSecOps** (Trivy, Conftest, Gatekeeper).
 
 L’atelier part du principe que :
 - Le **cluster AKS existe déjà**.
