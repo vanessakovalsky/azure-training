@@ -128,45 +128,82 @@ kubectl apply -f myapp-argocd.yaml
 ## azure-pipelines.yml (avec Helm)
 ```yaml
 trigger:
-  - main
+- main
+
+resources:
+  repositories:
+    - repository: gitops
+      type: git
+      name: Demo Vanessa/gitops
+      ref: refs/heads/main
 
 variables:
+  group: docker-webapp-variables
   imageName: "myapp"
-  containerRegistry: "monacr.azurecr.io"
-  gitopsRepo: "git@github.com:mon-org/gitops-infra.git"
+  containerRegistry: "hub.docker.com"
+  gitopsRepo: "git@ssh.dev.azure.com:v3/vdavid0968/Demo%20Vanessa/gitops"
   gitopsBranch: "main"
   valuesPath: "apps/myapp/values.yaml"
 
 stages:
-  - stage: Build
-    displayName: "Build + Scan + GitOps Update"
-    jobs:
-      - job: Build
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: Docker@2
-            displayName: "Build and push Docker image"
-            inputs:
-              containerRegistry: "ACR-Service-Connection"
-              repository: $(imageName)
-              command: buildAndPush
-              Dockerfile: Dockerfile
-              tags: |
-                $(Build.BuildId)
+- stage: Build
+  displayName: 'Build and Push Docker Image'
+  jobs:
+  - job: BuildPushImage
+    displayName: 'Build and Push Docker Image'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    # 🔹 Checkout du repo principal dans un dossier isolé "src"
+    - checkout: self
+      clean: false
 
-          - checkout: gitops
-            repository: gitopsRepo
-            persistCredentials: true
+    # 🔹 Build Docker
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        command: build
+        repository: vanessakovalsky/docker-webapp-demo
+        dockerfile: '$(Build.SourcesDirectory)/demodocker/app/Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
+    
+    # 🔹 Login Docker
+    - task: Docker@2
+      displayName: 'Push Docker Image to ACR'
+      inputs:
+        command: login
+        containerRegistry: 'docker-registry-connection'
+        
+    # 🔹 Push Docker
+    - task: Docker@2
+      displayName: 'Push Docker image'
+      inputs:
+        command: push
+        repository: vanessakovalsky/docker-webapp-demo
+        tags: |
+          $(Build.BuildId)
+          latest
 
-          - script: |
-              sed -i "s/tag:.*/tag: \"$(Build.BuildId)\"/" $(valuesPath)
-              git config user.name "azure-pipelines"
-              git config user.email "azure@pipelines.com"
-              git add $(valuesPath)
-              git commit -m "chore: update image to $(Build.BuildId)"
-              git push origin $(gitopsBranch)
-            displayName: "Update GitOps repo"
+    # 🔹 Checkout GitOps dans un sous-dossier séparé "gitops"
+    - checkout: gitops
+      persistCredentials: true
+      clean: false
+      path: gitops
+
+    # 🔹 Met à jour le values.yaml dans GitOps
+    - script: |
+        ls -l
+        cd ../gitops
+        git checkout -B $(gitopsBranch)
+        sed -i "s/tag:.*/tag: \"$(Build.BuildId)\"/" $(valuesPath)
+        git config user.name "azure-pipelines"
+        git config user.email "azure@pipelines.com"
+        git add $(valuesPath)
+        git commit -m "chore: update image to $(Build.BuildId)"
+        git push origin $(gitopsBranch)
+      displayName: "Update GitOps repo"
 ```
 
 ---
