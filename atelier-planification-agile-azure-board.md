@@ -37,7 +37,7 @@
 
 3. **Configurer les zones (Areas)**
 
-   - Accédez à Paramètres du projet > Boards > Classification > Areas
+   - Accédez à Paramètres du projet > Boards > Team configuration > Areas
    - Créez une structure qui reflète les composants de votre application:
      ```
      [Nom du Projet]
@@ -50,7 +50,7 @@
 
 4. **Configurer les itérations (Sprints)**
 
-   - Accédez à Paramètres du projet > Boards > Classification > Iterations
+   - Accédez à Paramètres du projet > Boards > Team configuration > Iterations
    - Créez vos sprints avec les dates appropriées:
      ```
      [Nom du Projet]
