@@ -18,9 +18,6 @@
 - Notions de base en développement logiciel
 - Connexion internet stable
 
-### Durée approximative
-
-- 3 heures
 
 
 ### Partie 1 : Configuration initiale d'Azure Repos
