@@ -366,67 +366,7 @@ git push origin feature/equipe-b
 6. Créez une nouvelle PR pour fusionner feature/equipe-b dans main
 
 
-### Partie 6 : Intégration avec les workflows CI/CD
-
-#### Exercice 6.1 : Configuration d'un déclencheur de build sur les commits
-
-1. Dans Azure DevOps, naviguez vers **Pipelines**
-2. Créez un nouveau pipeline :
-   - Sélectionnez **Azure Repos Git** comme source
-   - Choisissez votre projet `AZ400-Git-Workshop`
-   - Utilisez le modèle "Node.js" ou "Starter pipeline"
-
----
-   
-3. Modifiez le pipeline YAML pour inclure un déclencheur sur le dépôt Git :
-
-```yaml
-trigger:
-- main
-- feature/*
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- script: echo "Exécution du build suite à un commit Git"
-  displayName: 'Run build script'
-```
-
-4. Enregistrez et exécutez le pipeline
-
----
-
-#### Exercice 6.2 : Tests des déclencheurs CI/CD
-
-1. Créez une nouvelle branche de fonctionnalité :
-
-```bash
-git checkout main
-git pull
-git checkout -b feature/integration-ci-cd
-```
-
-2. Ajoutez un fichier de test simple :
-
-```bash
-mkdir -p tests/unit
-echo "console.log('Test unitaire factice');\nconsole.log('Tous les tests ont réussi!');" > tests/unit/test.js
-```
-
----
-
-3. Validez et poussez les modifications :
-
-```bash
-git add tests/unit/test.js
-git commit -m "Ajout de tests unitaires factices"
-git push -u origin feature/integration-ci-cd
-```
-
-4. Observez le déclenchement automatique du pipeline CI dans Azure DevOps
-
-### Partie 7 : Techniques Git avancées dans Azure Repos
+### Partie 6 : Techniques Git avancées dans Azure Repos
 
 #### Exercice 7.1 : Utilisation des tags Git
 
