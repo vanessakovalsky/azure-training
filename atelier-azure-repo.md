@@ -13,7 +13,7 @@
 ### Prérequis
 
 - Un compte Azure DevOps actif
-- Git installé localement (version 2.25 ou ultérieure)
+- Git installé localement (version 2.25 ou ultérieure) : https://git-scm.com/install/windows
 - Visual Studio Code ou IDE préféré
 - Notions de base en développement logiciel
 - Connexion internet stable
