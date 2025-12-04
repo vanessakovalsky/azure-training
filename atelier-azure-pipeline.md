@@ -1,6 +1,5 @@
 # Atelier 2 : Activation de l'intégration continue avec Azure Pipelines
 
-### Durée estimée : 120 minutes
 
 ### Objectifs d'apprentissage
 - Mettre en place un pipeline CI complet pour une application web
@@ -10,7 +9,7 @@
 
 ### Prérequis
 - Accès à une organisation Azure DevOps
-- Connaissances de base en développement web (.NET Core ou Node.js)
+- Connaissances de base en développement web (Node.js)
 - Git installé sur votre poste de travail
 
 ### Étapes détaillées
@@ -18,85 +17,10 @@
 #### Partie 1 : Préparation du projet
 
 1. **Création du dépôt**
-   - Dans Azure DevOps, naviguez vers *Repos > Files*
-   - Cliquez sur "Initialize repository" s'il est vide
-   - Ou créez un nouveau dépôt si nécessaire
+   - Dans Azure DevOps, naviguez vers *Repos > New
+   - Importer le dépôt depuis celui-ci : https://github.com/vanessakovalsky/express-demojs
 
----
-
-2. **Création d'une application web simple**
-   - Clonez le dépôt sur votre poste local: `git clone [url-du-depot]`
-   - Pour .NET Core:
-     ```bash
-     dotnet new webapi -o WebApiSample
-     cd WebApiSample
-     dotnet new xunit -o WebApiSample.Tests
-     ```
-   - Ou pour Node.js:
-     ```bash
-     mkdir node-sample
-     cd node-sample
-     npm init -y
-     npm install express --save
-     npm install jest supertest --save-dev
-     ```
-
----
-
-   - Créez quelques fichiers de base:
-     - Pour .NET Core: un contrôleur API simple et un test unitaire
-     - Pour Node.js: un serveur Express simple et un test Jest
-
----
-
-3. **Configuration des tests**
-   - Pour .NET Core, créez un test simple dans WebApiSample.Tests:
-     ```csharp
-     using Xunit;
-     using WebApiSample.Controllers;
-     
-     public class WeatherForecastControllerTests
-     {
-         [Fact]
-         public void Get_ReturnsData()
-         {
-             // Arrange
-             var controller = new WeatherForecastController();
-             
-             // Act
-             var result = controller.Get();
-             
-             // Assert
-             Assert.NotNull(result);
-             Assert.NotEmpty(result);
-         }
-     }
-     ```
-
----
-
-   - Pour Node.js, créez un test Jest:
-     ```javascript
-     const request = require('supertest');
-     const app = require('./app');
-     
-     test('GET / responds with Hello World', async () => {
-       const response = await request(app).get('/');
-       expect(response.status).toBe(200);
-       expect(response.text).toContain('Hello World');
-     });
-     ```
-
----
-
-4. **Commit et push du code**
-   ```bash
-   git add .
-   git commit -m "Initial commit with web application and tests"
-   git push
-   ```
-
----
+2. **Cloner le dépôt en local sur votre machine**
 
 #### Partie 2 : Configuration du pipeline CI
 
@@ -105,80 +29,10 @@
    - Dans Azure DevOps, naviguez vers *Pipelines > Pipelines*
    - Cliquez sur "New pipeline"
    - Sélectionnez votre référentiel source
-   - Pour .NET Core, choisissez le modèle "ASP.NET Core" ou "Starter pipeline"
-   - Pour Node.js, choisissez le modèle "Node.js" ou "Starter pipeline"
+   - Choisissez le modèle "Node.js" ou "Starter pipeline"
 
----
 
-6. **Configuration du pipeline pour .NET Core**
-
-   - Modifiez le YAML comme suit:
-     ```yaml
-     trigger:
-       branches:
-         include:
-         - main
-         - feature/*
-       paths:
-         include:
-         - WebApiSample/**
-         exclude:
-         - '*.md'
-     
-     pool:
-       vmImage: 'ubuntu-latest'
-     
-     variables:
-       buildConfiguration: 'Release'
-       projectPath: 'WebApiSample'
-       testProjectPath: 'WebApiSample.Tests'
-     
-     steps:
-     - task: DotNetCoreCLI@2
-       displayName: 'Restore packages'
-       inputs:
-         command: 'restore'
-         projects: '$(projectPath)/**/*.csproj'
-     
-     - task: DotNetCoreCLI@2
-       displayName: 'Build solution'
-       inputs:
-         command: 'build'
-         projects: '$(projectPath)/**/*.csproj'
-         arguments: '--configuration $(buildConfiguration)'
-     
-     - task: DotNetCoreCLI@2
-       displayName: 'Run tests'
-       inputs:
-         command: 'test'
-         projects: '$(testProjectPath)/**/*.csproj'
-         arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
-         publishTestResults: true
-     
-     - task: PublishCodeCoverageResults@1
-       displayName: 'Publish code coverage report'
-       inputs:
-         codeCoverageTool: 'Cobertura'
-         summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-     
-     - task: DotNetCoreCLI@2
-       displayName: 'Publish website'
-       inputs:
-         command: 'publish'
-         publishWebProjects: true
-         arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-         zipAfterPublish: true
-     
-     - task: PublishBuildArtifacts@1
-       displayName: 'Publish artifacts'
-       inputs:
-         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-         ArtifactName: 'webapp'
-     ```
-
----
-
-7. **Configuration du pipeline pour Node.js**
+6. **Configuration du pipeline pour Node.js**
 
    - Modifiez le YAML comme suit:
      ```yaml
@@ -253,7 +107,7 @@
 
 ---
 
-8. **Sauvegarde et exécution du pipeline**
+7. **Sauvegarde et exécution du pipeline**
 
    - Cliquez sur "Save and run"
    - Observez l'exécution du pipeline
@@ -274,7 +128,7 @@
          - feature/*
        paths:
          include:
-         - WebApiSample/** # ou node-sample/**
+         - node-sample/**
          exclude:
          - '*.md'
      
@@ -284,7 +138,7 @@
          - main
        paths:
          include:
-         - WebApiSample/** # ou node-sample/**
+         - node-sample/**
          exclude:
          - '*.md'
      ```
@@ -318,7 +172,7 @@
 
 12. **Ajout d'un badge de build au README**
 
-    - Créez un fichier README.md à la racine du projet
+    - Vérifier la présence du fichier README.md à la racine du projet
     - Dans Azure DevOps, naviguez vers votre pipeline
     - Cliquez sur les "..." et sélectionnez "Status badge"
     - Copiez le markdown du badge
