@@ -95,7 +95,7 @@ Guide étape par étape pour réaliser ces deux exercices.
      - Tasks en cours
      - Bugs ouverts
 
-### **Étape 7 : Organisation et finalisation (15 min)**
+### **Étape 6 : Organisation et finalisation (15 min)**
 
 1. **Organisez visuellement le tableau de bord**
    - Regroupez les widgets par thème (Build, Qualité, Backlog, Performance)
