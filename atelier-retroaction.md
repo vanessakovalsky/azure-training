@@ -69,27 +69,8 @@ Guide étape par étape pour réaliser ces deux exercices.
    - Groupez par "Severity" (Critical, High, Medium, Low)
    - Filtrez sur Type = Bug et État ≠ Closed
 
-### **Étape 5 : Métriques de performance des applications (25-30 min)**
 
-1. **Si vous utilisez Application Insights**
-   - Ajoutez le widget "Application Insights Chart"
-   - Connectez votre ressource Application Insights
-   - Configurez les métriques :
-     - Temps de réponse moyen
-     - Taux d'erreur serveur
-     - Nombre de requêtes par minute
-     - Disponibilité
-
-2. **Alternative : widgets personnalisés**
-   - Utilisez "Markdown" pour intégrer des liens vers vos outils de monitoring
-   - Ajoutez "Embedded Webpage" pour afficher Grafana, Kibana, etc.
-
-3. **Widget de test automatisé**
-   - Ajoutez "Test Results Trend"
-   - Sélectionnez vos pipelines de test
-   - Affichez le taux de réussite des tests
-
-### **Étape 6 : Évolution du backlog (15-20 min)**
+### **Étape 5 : Évolution du backlog (15-20 min)**
 
 1. **Widget Burndown**
    - Ajoutez "Sprint Burndown"
