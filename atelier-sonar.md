@@ -131,6 +131,9 @@ steps:
    - Comment l'intégration de SonarCloud peut-elle améliorer votre processus de revue de code?
    - Quels avantages y a-t-il à collecter la couverture de code avec l'analyse SonarCloud?
 
+
+## BONUS
+
 ### Partie 3 : Configuration des Quality Gates
 
 **Instructions:**
