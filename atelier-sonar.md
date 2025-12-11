@@ -47,66 +47,8 @@
    - Créez une connexion de service SonarCloud
    - Utilisez le token d'accès précédemment obtenu
 
----
 
-2. **Configurer l'analyse SonarCloud pour un projet .NET**
-   - Modifiez votre fichier azure-pipelines.yml pour inclure l'analyse SonarCloud:
-
-```yaml
-trigger:
-- main
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  buildConfiguration: 'Release'
-  
-steps:
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'SonarCloud'
-    organization: 'votre-organisation'
-    scannerMode: 'MSBuild'
-    projectKey: 'votre-projet-key'
-    projectName: 'Nom du Projet'
-    extraProperties: |
-      sonar.exclusions=**/obj/**,**/bin/**
-      sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/**/coverage.opencover.xml
-      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/*.trx
-
-- task: DotNetCoreCLI@2
-  displayName: 'Restore'
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Build'
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Test with code coverage'
-  inputs:
-    command: 'test'
-    projects: '**/*Tests/*.csproj'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover'
-    
-- task: SonarCloudAnalyze@1
-  displayName: 'Run SonarCloud Analysis'
-
-- task: SonarCloudPublish@1
-  displayName: 'Publish SonarCloud Results'
-  inputs:
-    pollingTimeoutSec: '300'
-```
-
----
-
-3. **Pour les projets JavaScript/TypeScript**
+2. **Pour les projets JavaScript/TypeScript**
    - Utilisez cette configuration alternative:
 
 ```yaml
@@ -125,9 +67,7 @@ steps:
       sonar.javascript.lcov.reportPaths=coverage/lcov.info
 ```
 
----
-
-4. **Questions de réflexion:**
+3. **Questions de réflexion:**
    - Comment l'intégration de SonarCloud peut-elle améliorer votre processus de revue de code?
    - Quels avantages y a-t-il à collecter la couverture de code avec l'analyse SonarCloud?
 
