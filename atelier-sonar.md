@@ -52,19 +52,18 @@
    - Utilisez cette configuration alternative:
 
 ```yaml
-- task: SonarCloudPrepare@1
+- task: SonarCloudPrepare@4
   inputs:
-    SonarCloud: 'SonarCloud'
-    organization: 'votre-organisation'
-    scannerMode: 'CLI'
+    SonarQube: 'VanessaSonarCloud'
+    organization: 'vdavid0968'
+    scannerMode: 'cli'
     configMode: 'manual'
-    cliProjectKey: 'votre-projet-key'
-    cliProjectName: 'Nom du Projet'
-    cliSources: '.'
-    extraProperties: |
-      sonar.sources=src
-      sonar.tests=tests
-      sonar.javascript.lcov.reportPaths=coverage/lcov.info
+    cliProjectKey: 'votre-cle-projet'
+    cliProjectName: 'votre-nomè-de-projet'
+    cliSources: 'node-sample'
+- task: SonarCloudAnalyze@4
+  inputs:
+    jdkversion: 'JAVA_HOME_17_X64'
 ```
 
 3. **Questions de réflexion:**
