@@ -1,6 +1,6 @@
 # Détail des Ateliers Azure DevOps et Gestion des Incidents
 
-Je vais vous guider étape par étape pour réaliser ces deux exercices.
+Guide étape par étape pour réaliser ces deux exercices.
 
 ---
 
