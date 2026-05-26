@@ -46,7 +46,7 @@ ShopConnect
 
 1. Aller dans **Project Settings** → **Project configuration** → **Areas**
 2. Créer la structure ci-dessus
-3. Pour chaque area, définir une description
+3. Pour chaque area, définir le nom et l'arborescence
 
 **Iterations (Sprints) à créer :**
 
