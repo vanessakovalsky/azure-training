@@ -498,27 +498,7 @@ Azure DevOps → Create PR: feature/update-readme → main
 
 **Résolution du conflit :**
 
-**Option 1 : Via Azure DevOps Web (simple)**
-
-```
-1. Dans la PR, cliquer sur [Resolve conflicts]
-2. Sélectionner README.md
-3. Éditeur de conflit s'affiche:
-
-<<<<<<< feature/update-readme (Your changes)
-## Current Status: Active Development
-=======
-## Project Status: In Development
->>>>>>> main (Changes in main)
-
-4. Éditer manuellement pour combiner:
-## Project Status: Active Development
-
-5. [Mark as resolved]
-6. [Commit merge]
-```
-
-**Option 2 : Via ligne de commande (recommandé)**
+**Via ligne de commande**
 
 ```bash
 # Sur votre branche
