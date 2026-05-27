@@ -48,7 +48,7 @@ Name: Checkout Flow Tests
 3. **Créer des configurations de test**
 
 ```
-Project Settings → Test → Test Configurations
+Tests plans → Test Configurations
 
 Configuration 1:
 Name: Windows 10 + Chrome
