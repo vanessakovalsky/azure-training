@@ -428,3 +428,50 @@ default ✓ [======================================] 00/20 VUs  2m0s
 4. **Comment décidez-vous si un test de charge est réussi ou échoué ?**
 
 ---
+
+## Bonus - Lancer l'API pour réaliser les tests : 
+
+* Dans votre projet ShopConnect, dans le dossier src/ShopConnect.API, crééz un sous dossiers Controllers et déplacer vos deux controleurs crée au tp précédent dans ce dossier.
+* Toujours le dossier src/ShopConnect.API, créer les deux fichiers suivants :
+  * .csproj 
+```
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
+```
+  * Program.cs
+```
+var builder = WebApplication.CreateBuilder(args);
+
+// Ajout des controllers
+builder.Services.AddControllers();
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Swagger UI
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+```
+* Enfin, installer la dépendance : `dotnet add package Swashbuckle.AspNetCore`
+* Puis lancer l'application: `dotnet run`
