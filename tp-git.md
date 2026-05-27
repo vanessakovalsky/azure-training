@@ -168,7 +168,9 @@ ShopConnect/
 ```bash
 # 1. Créer et basculer sur la branche feature
 git checkout -b feature/authentication
-
+```
+* Sous linux: 
+```bash
 # 2. Créer le fichier AuthController.cs
 cat > src/ShopConnect.API/AuthController.cs << 'EOF'
 using Microsoft.AspNetCore.Mvc;
@@ -208,7 +210,57 @@ namespace ShopConnect.API.Controllers
     }
 }
 EOF
+```
+* Avecc powershell :
+```psh
+@'
+using Microsoft.AspNetCore.Mvc;
 
+ 
+
+namespace ShopConnect.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        [HttpPost("login")]
+        public IActionResult Login([FromBody] LoginRequest request)
+        {
+            // TODO: Implement login logic
+            return Ok(new { token = "sample-jwt-token" });
+        }
+
+ 
+
+        [HttpPost("register")]
+        public IActionResult Register([FromBody] RegisterRequest request)
+        {
+            // TODO: Implement registration logic
+            return Ok(new { message = "User registered successfully" });
+        }
+    }
+
+ 
+
+    public class LoginRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+ 
+
+    public class RegisterRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string ConfirmPassword { get; set; }
+    }
+}
+'@ > src/ShopConnect.API/AuthController.cs
+```
+```bash
 # 3. Mettre à jour la documentation
 cat >> docs/API.md << 'EOF'
 
