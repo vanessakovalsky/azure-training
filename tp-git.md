@@ -401,7 +401,7 @@ Work Items: [Lier un work item si disponible]
 [Create]
 ```
 
-2. **Configurer la Pull Request**
+2. **Configurer la Pull Request** (ces option seront visible au moment de l'approbation, les configurations se font dans les paramètres du projet, au niveau des policy de branches)
 
 ```
 Options à vérifier:
