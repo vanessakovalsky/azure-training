@@ -2,7 +2,7 @@
 
 **Durée estimée : 3h30**
 
-#### Objectifs
+## Objectifs
 - Mettre en place le versioning automatique
 - Gérer les variables par environnement via Key Vault
 - Analyser et visualiser les logs de déploiement
@@ -10,7 +10,7 @@
 
 ---
 
-#### Partie 1 : Versioning automatique (50 min)
+## Partie 1 : Versioning automatique (50 min)
 
 **Ajouter le versioning au projet**
 
@@ -235,7 +235,7 @@ git push origin main
 
 ---
 
-#### Partie 2 : Variables par environnement (45 min)
+## Partie 2 : Variables par environnement (45 min)
 
 **Créer les groupes de variables**
 
@@ -398,166 +398,464 @@ done
 
 ---
 
-#### Partie 3 : Visualiser et analyser les logs (55 min)
+## Partie 3 : Visualiser et analyser les logs (55 min)
 
-**Configurer Application Insights**
+### Exercice 1 : Explorer les logs d'un pipeline réussi (10 min)
+
+**Objectif :** Se familiariser avec la navigation dans les logs Azure DevOps.
+
+```
+1. Aller dans Pipelines → votre pipeline CI → dernière exécution réussie
+
+2. Cliquer sur le job "BuildJob"
+
+3. Explorer chaque étape :
+   ├─ Restore NuGet packages  → Combien de packages restaurés ?
+   ├─ Build solution          → Durée de la compilation ?
+   ├─ Run unit tests          → Combien de tests exécutés ?
+   └─ Publish artifacts       → Taille de l'artefact publié ?
+
+4. Activer les timestamps :
+   Bouton [Timestamps] en haut à droite des logs
+   → Observer le temps passé entre chaque ligne
+
+5. Utiliser la recherche :
+   Ctrl+F dans les logs
+   → Rechercher "warning"
+   → Rechercher "error"
+   → Combien de warnings y a-t-il ?
+
+6. Télécharger les logs complets :
+   [...] en haut à droite → Download logs
+   → Ouvrir le ZIP
+   → Observer la structure :
+      logs/
+      ├─ 1_Build Stage/
+      │  ├─ 1_Checkout source code.log
+      │  ├─ 2_Restore NuGet packages.log
+      │  ├─ 3_Build solution.log
+      │  ├─ 4_Run unit tests.log
+      │  └─ 5_Publish artifacts.log
+      └─ ...
+```
+
+**Questions :**
+- Quelle étape prend le plus de temps ?
+- Y a-t-il des warnings dans les logs de build ?
+- Quelle est la taille du fichier de log de l'étape "Run unit tests" ?
+
+---
+
+### Exercice 2 : Simuler un échec et analyser les logs (20 min)
+
+**Objectif :** Introduire volontairement une régression, observer l'échec dans les logs, identifier la cause et corriger.
+
+#### Étape 1 — Introduire le bug
 
 ```bash
-# Créer une ressource Application Insights par environnement
-for env in dev test prod; do
-  az monitor app-insights component create \
-    --app "shopconnect-ai-$env" \
-    --location westeurope \
-    --resource-group shopconnect-rg \
-    --kind web \
-    --application-type web
-  
-  # Récupérer la clé d'instrumentation
-  KEY=$(az monitor app-insights component show \
-    --app "shopconnect-ai-$env" \
-    --resource-group shopconnect-rg \
-    --query "instrumentationKey" -o tsv)
-  
-  echo "$env Application Insights Key: $KEY"
-done
+git checkout develop
+
+# Modifier le service pour introduire un bug
+cat > src/ShopConnect.API/Services/ProductService.cs << 'EOF'
+using ShopConnect.API.Models;
+
+namespace ShopConnect.API.Services;
+
+public class ProductService : IProductService
+{
+    private static readonly List<Product> _products = new()
+    {
+        new Product { Id = 1, Name = "Laptop Pro",    Price = 1299.99m, Category = "Electronics" },
+        new Product { Id = 2, Name = "Wireless Mouse", Price = 39.99m,  Category = "Accessories" },
+        new Product { Id = 3, Name = "USB-C Hub",     Price = 59.99m,  Category = "Accessories" }
+    };
+
+    private static int _nextId = 4;
+
+    public IEnumerable<Product> GetAll()
+    {
+        // BUG SIMULÉ : lève une exception
+        throw new NotImplementedException("Feature temporarily disabled");
+    }
+
+    public Product? GetById(int id) =>
+        _products.FirstOrDefault(p => p.Id == id);
+
+    public Product Create(Product product)
+    {
+        product.Id = _nextId++;
+        _products.Add(product);
+        return product;
+    }
+
+    public bool Delete(int id)
+    {
+        var product = GetById(id);
+        if (product == null) return false;
+        _products.Remove(product);
+        return true;
+    }
+}
+EOF
+
+git add .
+git commit -m "perf: temporary refactor (introduces regression)"
+git push origin develop
 ```
 
-**Ajouter la collecte de logs dans le pipeline**
+#### Étape 2 — Observer l'échec dans Azure DevOps
 
-```yaml
-# Ajouter ces steps à votre pipeline de release
+```
+Le pipeline CI se déclenche automatiquement.
 
-# Step 1: Activer les logs détaillés avant déploiement
-- task: AzureCLI@2
-  displayName: 'Enable verbose logging'
-  inputs:
-    azureSubscription: 'Azure-ShopConnect'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      az webapp log config \
-        --name $(WebAppName) \
-        --resource-group $(ResourceGroup) \
-        --application-logging filesystem \
-        --level verbose \
-        --web-server-logging filesystem \
-        --detailed-error-messages true
+Dans Pipelines → ShopConnect CI → exécution en cours :
 
-# Step 2: Télécharger les logs en cas d'erreur
-- task: AzureCLI@2
-  displayName: 'Download logs on failure'
-  condition: failed()
-  inputs:
-    azureSubscription: 'Azure-ShopConnect'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      mkdir -p $(Build.ArtifactStagingDirectory)/failure-logs
-      
-      # Logs App Service
-      az webapp log download \
-        --name $(WebAppName) \
-        --resource-group $(ResourceGroup) \
-        --log-file $(Build.ArtifactStagingDirectory)/failure-logs/appservice-logs.zip
-      
-      # Décompresser et afficher les 200 dernières lignes
-      cd $(Build.ArtifactStagingDirectory)/failure-logs
-      unzip -o appservice-logs.zip 2>/dev/null || true
-      
-      echo "=== Recent App Logs ==="
-      find . -name "*.txt" -newer appservice-logs.zip -exec tail -50 {} \; 2>/dev/null || \
-        echo "No recent log files found"
+1. Observer le badge rouge sur l'étape "Run unit tests"
 
-# Step 3: Publier les logs comme artefact
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish failure logs'
-  condition: failed()
-  inputs:
-    pathToPublish: '$(Build.ArtifactStagingDirectory)/failure-logs'
-    artifactName: 'failure-logs-$(Build.BuildId)'
+2. Cliquer sur l'étape en rouge
+
+3. Dans les logs, repérer :
+   ┌─────────────────────────────────────────────────────┐
+   │ ##[error]Error Message:                             │
+   │ System.NotImplementedException:                     │
+   │   Feature temporarily disabled                      │
+   │                                                     │
+   │    at ShopConnect.API.Services.ProductService       │
+   │       .GetAll()                                     │
+   │    at ShopConnect.Tests.ProductServiceTests         │
+   │       .GetAll_ReturnsAllProducts()                  │
+   │                                                     │
+   │ Failed tests:                                       │
+   │   GetAll_ReturnsAllProducts                         │
+   │   GetAll_ReturnsAtLeastThreeProducts                │
+   │   Create_ProductIsRetrievableAfterCreation          │
+   │                                                     │
+   │ Total tests: 10  |  Passed: 7  |  Failed: 3        │
+   └─────────────────────────────────────────────────────┘
+
+4. Aller dans l'onglet "Tests" de l'exécution :
+   → Observer les 3 tests échoués en rouge
+   → Cliquer sur un test échoué
+   → Lire le stack trace complet
+
+5. Aller dans l'onglet "Summary" :
+   → Observer le message d'erreur global
+   → Voir quelle étape a bloqué le pipeline
 ```
 
-**Script d'analyse des logs post-déploiement**
+**Questions à répondre avant de corriger :**
+- Quelle méthode exacte lève l'exception ?
+- Combien de tests sont impactés par ce bug ?
+- Est-ce que le pipeline est allé jusqu'à la publication des artefacts ?
+- À quelle ligne du code source se trouve l'erreur ?
+
+#### Étape 3 — Corriger et vérifier
 
 ```bash
-# Script: analyze-deployment-logs.sh
-#!/bin/bash
+# Corriger le service
+cat > src/ShopConnect.API/Services/ProductService.cs << 'EOF'
+using ShopConnect.API.Models;
 
-WEBAPP_NAME="${1:-shopconnect-webapp-prod}"
-RESOURCE_GROUP="${2:-shopconnect-rg}"
-LOG_DIR="/tmp/deployment-logs-$(date +%Y%m%d%H%M%S)"
+namespace ShopConnect.API.Services;
 
-mkdir -p "$LOG_DIR"
+public class ProductService : IProductService
+{
+    private static readonly List<Product> _products = new()
+    {
+        new Product { Id = 1, Name = "Laptop Pro",    Price = 1299.99m, Category = "Electronics" },
+        new Product { Id = 2, Name = "Wireless Mouse", Price = 39.99m,  Category = "Accessories" },
+        new Product { Id = 3, Name = "USB-C Hub",     Price = 59.99m,  Category = "Accessories" }
+    };
 
-echo "====================================="
-echo "DEPLOYMENT LOG ANALYSIS"
-echo "App: $WEBAPP_NAME"
-echo "Time: $(date)"
-echo "====================================="
+    private static int _nextId = 4;
 
-# Télécharger les logs
-az webapp log download \
-  --name "$WEBAPP_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --log-file "$LOG_DIR/logs.zip" 2>/dev/null
+    public IEnumerable<Product> GetAll() => _products;
 
-if [ -f "$LOG_DIR/logs.zip" ]; then
-  cd "$LOG_DIR"
-  unzip -o logs.zip > /dev/null 2>&1
-  
-  # Analyser les erreurs HTTP 5xx
-  echo ""
-  echo "=== HTTP 5xx Errors (last hour) ==="
-  find . -name "*.log" -exec grep -l "HTTP/1.1\" 5" {} \; | while read f; do
-    echo "File: $f"
-    grep "HTTP/1.1\" 5" "$f" | tail -20
-  done
-  
-  # Analyser les exceptions
-  echo ""
-  echo "=== Application Exceptions ==="
-  find . -name "*.txt" -exec grep -l "Exception\|Error" {} \; | while read f; do
-    echo "File: $f"
-    grep -E "(Exception|Error|FATAL)" "$f" | tail -20
-  done
-  
-  # Résumé
-  echo ""
-  echo "=== Summary ==="
-  ERRORS=$(find . -name "*.log" -exec grep -c "HTTP/1.1\" 5" {} + 2>/dev/null | \
-    awk -F: '{sum += $2} END {print sum}')
-  echo "5xx Errors: ${ERRORS:-0}"
-  
-  EXCEPTIONS=$(find . -name "*.txt" -exec grep -c "Exception" {} + 2>/dev/null | \
-    awk -F: '{sum += $2} END {print sum}')
-  echo "Exceptions: ${EXCEPTIONS:-0}"
-else
-  echo "No logs available (check Azure CLI permissions)"
-fi
+    public Product? GetById(int id) =>
+        _products.FirstOrDefault(p => p.Id == id);
 
-echo ""
-echo "Logs saved to: $LOG_DIR"
+    public Product Create(Product product)
+    {
+        product.Id = _nextId++;
+        _products.Add(product);
+        return product;
+    }
+
+    public bool Delete(int id)
+    {
+        var product = GetById(id);
+        if (product == null) return false;
+        _products.Remove(product);
+        return true;
+    }
+}
+EOF
+
+git add .
+git commit -m "fix(products): restore GetAll implementation
+
+Root cause: NotImplementedException introduced in previous commit
+Fix: Restore original implementation returning all products
+Impacts: 3 unit tests were failing
+
+Fixes #[numéro du bug si créé dans Boards]"
+
+git push origin develop
 ```
 
-**Visualiser les logs dans Azure DevOps**
-
 ```
-1. Aller dans une exécution de pipeline
-2. Cliquer sur un job
-3. Voir les étapes et leurs logs
-
-Navigation dans les logs:
-├─ [Chercher]  → Ctrl+F dans les logs
-├─ [Télécharger] → Télécharger les logs complets
-├─ [Timestamps] → Activer les timestamps
-└─ [Niveaux]   → Filtrer par niveau (error, warning, info)
-
-Télécharger les logs d'un pipeline:
-1. Pipeline run → [...] → Download logs
-2. Fichier ZIP avec un répertoire par job/step
+Vérifier dans Azure DevOps :
+→ Le nouveau build est vert ✅
+→ Onglet Tests : 10/10 passés
+→ Comparer les deux exécutions côte à côte :
+  Pipelines → votre pipeline → [icône comparaison]
 ```
 
 ---
+
+### Exercice 3 : Collecter des diagnostics via le pipeline (25 min)
+
+**Objectif :** Ajouter des étapes de diagnostic dans le pipeline de release pour collecter les informations de l'application déployée et les rendre disponibles comme artefacts.
+
+#### Étape 1 — Ajouter les étapes de diagnostic au pipeline de release
+
+```bash
+# Modifier azure-pipelines-release.yml
+# Ajouter les étapes suivantes dans chaque stage de déploiement
+# après la tâche AzureWebApp@1
+```
+
+Voici les étapes à ajouter dans le stage `DeployDev` (et à répliquer pour Test et Prod) :
+
+```yaml
+# ─── À ajouter après la tâche AzureWebApp@1 ───────────────────────
+
+- task: PowerShell@2
+  displayName: 'Collect app diagnostics'
+  condition: always()
+  inputs:
+    targetType: 'inline'
+    script: |
+      $baseUrl = "$(DeployStep.AppServiceApplicationUrl)"
+      Write-Host "##[group]Application Diagnostics - $(Environment)"
+
+      # ── Health check ──────────────────────────────────────────
+      Write-Host ""
+      Write-Host "=== Health Check ==="
+      try {
+        $health = Invoke-RestMethod `
+          -Uri "$baseUrl/health" `
+          -TimeoutSec 10
+        Write-Host "  Status      : $($health.status)"
+        Write-Host "  Version     : $($health.version)"
+        Write-Host "  Environment : $($health.environment)"
+        Write-Host "  Timestamp   : $($health.timestamp)"
+      } catch {
+        Write-Warning "  Health endpoint unreachable: $_"
+      }
+
+      # ── Test des endpoints ────────────────────────────────────
+      Write-Host ""
+      Write-Host "=== Endpoint Status ==="
+      $endpoints = @(
+        @{ path = "/api/products";   method = "GET"; expectedCode = 200 },
+        @{ path = "/api/products/1"; method = "GET"; expectedCode = 200 },
+        @{ path = "/api/products/0"; method = "GET"; expectedCode = 404 }
+      )
+
+      $allOk = $true
+      foreach ($ep in $endpoints) {
+        try {
+          $r = Invoke-WebRequest `
+            -Uri "$baseUrl$($ep.path)" `
+            -Method $ep.method `
+            -UseBasicParsing `
+            -TimeoutSec 10
+          $icon = if ($r.StatusCode -eq $ep.expectedCode) { "✅" } else { "⚠️" }
+          Write-Host "  $icon $($ep.method) $($ep.path) → $($r.StatusCode)"
+          if ($r.StatusCode -ne $ep.expectedCode) { $allOk = $false }
+        } catch {
+          $code = $_.Exception.Response.StatusCode.value__
+          $icon = if ($code -eq $ep.expectedCode) { "✅" } else { "❌" }
+          Write-Host "  $icon $($ep.method) $($ep.path) → $code"
+          if ($code -ne $ep.expectedCode) { $allOk = $false }
+        }
+      }
+
+      if ($allOk) {
+        Write-Host ""
+        Write-Host "✅ All endpoints responding as expected"
+      } else {
+        Write-Warning "⚠️ Some endpoints returned unexpected status codes"
+      }
+
+      Write-Host "##[endgroup]"
+
+- task: PowerShell@2
+  displayName: 'Generate diagnostic report'
+  condition: always()
+  inputs:
+    targetType: 'inline'
+    script: |
+      $baseUrl  = "$(DeployStep.AppServiceApplicationUrl)"
+      $env      = "$(Environment)"
+      $dir      = "$(Build.ArtifactStagingDirectory)/diagnostics"
+      New-Item -ItemType Directory -Path $dir -Force | Out-Null
+
+      # ── Récupérer les infos health ────────────────────────────
+      $healthStatus = "UNREACHABLE"
+      $appVersion   = "unknown"
+      $appEnv       = "unknown"
+      try {
+        $health       = Invoke-RestMethod -Uri "$baseUrl/health" -TimeoutSec 10
+        $healthStatus = $health.status
+        $appVersion   = $health.version
+        $appEnv       = $health.environment
+      } catch {}
+
+      # ── Construire le rapport ─────────────────────────────────
+      $report = @"
+========================================
+DEPLOYMENT DIAGNOSTIC REPORT
+========================================
+Generated    : $(Get-Date -Format "dd/MM/yyyy HH:mm:ss")
+Build        : $(Build.BuildNumber)
+Branch       : $(Build.SourceBranchName)
+Commit       : $(Build.SourceVersion)
+Pipeline     : $(Build.DefinitionName)
+Agent        : $(Agent.Name)
+Environment  : $env
+App URL      : $baseUrl
+----------------------------------------
+APPLICATION STATUS
+----------------------------------------
+Health       : $healthStatus
+Version      : $appVersion
+Environment  : $appEnv
+----------------------------------------
+ENDPOINT CHECKS
+----------------------------------------
+"@
+
+      # ── Tester les endpoints ──────────────────────────────────
+      $endpoints = @(
+        @{ path = "/api/products";   expectedCode = 200 },
+        @{ path = "/api/products/1"; expectedCode = 200 },
+        @{ path = "/api/products/0"; expectedCode = 404 }
+      )
+
+      foreach ($ep in $endpoints) {
+        try {
+          $r    = Invoke-WebRequest `
+            -Uri "$baseUrl$($ep.path)" `
+            -UseBasicParsing -TimeoutSec 10
+          $icon = if ($r.StatusCode -eq $ep.expectedCode) { "PASS" } else { "WARN" }
+          $report += "`n[$icon] GET $($ep.path) → $($r.StatusCode)"
+        } catch {
+          $code = $_.Exception.Response.StatusCode.value__
+          $icon = if ($code -eq $ep.expectedCode) { "PASS" } else { "FAIL" }
+          $report += "`n[$icon] GET $($ep.path) → $code"
+        }
+      }
+
+      $report += "`n`n========================================"
+
+      # ── Sauvegarder et afficher ───────────────────────────────
+      $file = "$dir/report-$env-$(Build.BuildId).txt"
+      $report | Out-File -FilePath $file -Encoding UTF8
+      Write-Host $report
+      Write-Host ""
+      Write-Host "Report saved: $file"
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish diagnostic report'
+  condition: always()
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)/diagnostics'
+    artifactName: 'diagnostic-$(Environment)-$(Build.BuildId)'
+```
+
+#### Étape 2 — Déclencher le pipeline et consulter les rapports
+
+```
+1. Pousser un changement pour déclencher le pipeline :
+
+   git add azure-pipelines-release.yml
+   git commit -m "ci: add diagnostic steps to release pipeline"
+   git push origin main
+
+2. Suivre l'exécution dans Azure DevOps
+
+3. Consulter les diagnostics en ligne :
+   → Cliquer sur le stage "DeployDev"
+   → Cliquer sur l'étape "Collect app diagnostics"
+   → Observer le groupe de logs "Application Diagnostics"
+
+4. Télécharger le rapport :
+   Pipeline run → Artifacts
+   → diagnostic-Development-[BuildId]/
+   → report-Development-[BuildId].txt
+   → Ouvrir le fichier
+```
+
+#### Étape 3 — Simuler un déploiement en échec et comparer les rapports
+
+```bash
+# Introduire une erreur uniquement au runtime
+# (le build passe, mais l'app plante au démarrage)
+
+cat > src/ShopConnect.API/Program.cs << 'EOF'
+using ShopConnect.API.Services;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<IProductService, ProductService>();
+
+var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+// BUG RUNTIME : exception au démarrage
+throw new Exception("Simulated startup failure");
+
+app.Run();
+public partial class Program { }
+EOF
+
+git add .
+git commit -m "test: simulate runtime startup failure"
+git push origin main
+```
+
+```
+Observer dans Azure DevOps :
+→ Le build CI réussit (le bug est au runtime, pas à la compilation)
+→ Le déploiement sur Dev réussit (l'app est uploadée)
+→ L'étape "Collect app diagnostics" affiche :
+   Health : UNREACHABLE  ← l'app ne démarre pas
+→ L'étape "Health check" échoue → le stage est en erreur
+
+Comparer les deux rapports téléchargés :
+  report-Development-125.txt  → Health: healthy   ✅
+  report-Development-126.txt  → Health: UNREACHABLE ❌
+
+→ Différence visible immédiatement dans les artefacts
+```
+
+```bash
+# Corriger immédiatement
+git revert HEAD
+git push origin main
+
+# Observer le pipeline redevenir vert
+```
 
 #### Partie 4 : Rapport de release (50 min)
 
