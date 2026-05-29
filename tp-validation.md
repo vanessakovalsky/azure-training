@@ -222,7 +222,6 @@ mkdir -p templates
 
 cat > templates/production-deploy.yml << 'EOF'
 # templates/production-deploy.yml
-# Template obligatoire pour les déploiements en production
 
 parameters:
 - name: webAppName
@@ -233,56 +232,42 @@ parameters:
   type: string
   default: '$(Pipeline.Workspace)/**/*.zip'
 
-steps:
-- script: |
-    echo "========================================"
-    echo "PRODUCTION DEPLOYMENT CHECKLIST"
-    echo "========================================"
-    echo "App Name:    ${{ parameters.webAppName }}"
-    echo "Build:       $(Build.BuildNumber)"
-    echo "Triggered by: $(Build.RequestedFor)"
-    echo "========================================"
-  displayName: 'Pre-deployment checklist'
+stages:
+- stage: DeployProduction
+  jobs:
+  - deployment: DeployProdJob
+    environment: Production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
 
-- task: AzureWebApp@1
-  displayName: 'Deploy to ${{ parameters.webAppName }}'
-  inputs:
-    azureSubscription: '${{ parameters.azureSubscription }}'
-    appType: 'webAppLinux'
-    appName: '${{ parameters.webAppName }}'
-    package: '${{ parameters.packagePath }}'
-    deploymentMethod: 'zipDeploy'
+          - script: |
+              echo "========================================"
+              echo "PRODUCTION DEPLOYMENT CHECKLIST"
+              echo "========================================"
+            displayName: 'Pre-deployment checklist'
 
-- task: PowerShell@2
-  displayName: 'Post-deployment health check'
-  inputs:
-    targetType: 'inline'
-    script: |
-      $maxAttempts = 10
-      $attempt = 0
-      $url = "https://${{ parameters.webAppName }}.azurewebsites.net/health"
-      
-      do {
-        $attempt++
-        Write-Host "Health check attempt $attempt/$maxAttempts..."
-        Start-Sleep -Seconds 15
-        
-        try {
-          $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 30
-          if ($response.StatusCode -eq 200) {
-            Write-Host "✅ Health check passed!"
-            exit 0
-          }
-        } catch {
-          Write-Host "  Not ready yet: $_"
-        }
-      } while ($attempt -lt $maxAttempts)
-      
-      Write-Error "❌ Health check failed after $maxAttempts attempts"
-      exit 1
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: '${{ parameters.azureSubscription }}'
+              appType: 'webAppLinux'
+              appName: '${{ parameters.webAppName }}'
+              package: '${{ parameters.packagePath }}'
+
+          - task: PowerShell@2
+            inputs:
+              targetType: inline
+              script: |
+                Write-Host "Health check"
 EOF
+```
+* Créer un nouveau fichier de pipeline :
 
-git add templates/
+```
+cat > azure-pipelines-use-tempalte.yml << 'EOF'
+
+git add .
 git commit -m "ci: add production deploy template"
 git push origin main
 ```
