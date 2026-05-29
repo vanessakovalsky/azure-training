@@ -157,6 +157,7 @@ stages:
             displayName: 'Download Build Artifact'
           
           - task: AzureWebApp@1
+            name: DeployDevStep
             displayName: 'Deploy to Dev Web App'
             inputs:
               azureSubscription: '$(azureSubscription)'
@@ -173,7 +174,7 @@ stages:
                 Write-Host "Waiting 30 seconds for app to start..."
                 Start-Sleep -Seconds 30
                 
-                $url = "https://$(webAppName).azurewebsites.net"
+                $url = "$(DeployDevStep.AppServiceApplicationUrl)/api/product"
                 Write-Host "Checking: $url"
                 
                 try {
@@ -211,6 +212,7 @@ stages:
           
           - task: AzureWebApp@1
             displayName: 'Deploy to Test Web App'
+            name: DeployTestStep
             inputs:
               azureSubscription: '$(azureSubscription)'
               appType: 'webAppLinux'
@@ -224,7 +226,7 @@ stages:
               script: |
                 Start-Sleep -Seconds 30
                 
-                $baseUrl = "https://$(webAppName).azurewebsites.net"
+                $baseUrl = "$(DeployTestStep.AppServiceApplicationUrl)"
                 $endpoints = @("/", "/api/products")
                 
                 $allPassed = $true
