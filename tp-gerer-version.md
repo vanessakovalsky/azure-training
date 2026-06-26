@@ -132,12 +132,12 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: gitversion/setup@0
-      displayName: 'Install GitVersion'
+    - task: gitversion-setup@4.5.0
+      displayName: Install GitVersion
       inputs:
-        versionSpec: '5.x'
+        versionSpec: '6.7.x'
 
-    - task: gitversion/execute@0
+    - task: gitversion-execute@4.5.0
       displayName: 'Execute GitVersion'
       name: GitVersion
 
@@ -160,11 +160,11 @@ stages:
     - checkout: self
       fetchDepth: 0
 
-    - task: gitversion/setup@0
+    - task: gitversion-setup@4.5.0
       inputs:
-        versionSpec: '5.x'
+        versionSpec: '6.7.x'
 
-    - task: gitversion/execute@0
+    - task: gitversion-execute@4.5.0
       name: GitVersion
 
     - task: DotNetCoreCLI@2
