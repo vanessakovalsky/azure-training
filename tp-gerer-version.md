@@ -4,7 +4,6 @@
 
 ## Objectifs
 - Mettre en place le versioning automatique
-- Gérer les variables par environnement via Key Vault
 - Analyser et visualiser les logs de déploiement
 - Implémenter la gestion d'erreurs
 
