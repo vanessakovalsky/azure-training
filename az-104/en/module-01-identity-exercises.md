@@ -16,58 +16,65 @@ Expected result: `AU-st07` (with your number).
 
 ---
 
-## Lab 01.0 ⭐ — Explore the tenant (guided)
-**Duration** : 5 min · **Objective** : read how the tenant is organized before writing to it
-**Context** : Arvéo's new administration team discovers its tenant.
-**Prerequisites** : Lab 00.1 completed
-
-### Steps
-1. Open https://entra.microsoft.com, **Overview** menu.
-   Expected result: tenant name, tenant ID, primary domain `<DOMAIN>`, Microsoft Entra ID P2 licence.
-2. **Roles and administrators** > **User Administrator** > **Assignments**.
-   Expected result: your `st<NN>` account listed with scope `AU-st<NN>`.
-3. Display your identity from the command line (Cloud Shell Bash).
-   ```bash
-   az ad signed-in-user show --query "{upn:userPrincipalName, id:id}" -o table
-   ```
-   Expected result: your UPN `st<NN>@<DOMAIN>` and object ID.
-
-### Success criteria
-- [ ] Primary domain and tenant ID noted
-- [ ] `AU-st<NN>` scope identified on your Entra roles
-
----
-
-## Lab 01.1 ⭐ — Create Arvéo's management team in the portal (guided)
+## Lab 01.1 ⭐ — Create Arvéo's management team inside your AU (guided)
 **Duration** : 20 min · **Objective** : create users with their attributes within a delegated scope
 **Context** : Arvéo starts its migration; three key people need a cloud account.
-**Prerequisites** : Lab 01.0 completed
+**Prerequisites** : Lab 01.0 completed, Cloud Shell PowerShell with the variables defined at the top of the module (`$NN`, `$Domain`, `Connect-MgGraph`, `$au`)
 
-| User | Department (`department`) | Job title (`jobTitle`) |
-|---|---|---|
-| Claire Dubois | Direction | Operations Director |
-| Léa Martin | Logistique | Dock manager |
-| Karim Haddad | IT | Systems administrator |
+| User | UPN prefix | Department (`department`) | Job title (`jobTitle`) |
+|---|---|---|---|
+| Claire Dubois | `st<NN>-claire.dubois` | Direction | Operations Director |
+| Léa Martin | `st<NN>-lea.martin` | Logistique | Dock manager |
+| Karim Haddad | `st<NN>-karim.haddad` | IT | Systems administrator |
 
 The `department` values stay in French: they are used by dynamic rules shared with the French version of the course.
 
+> ℹ️ **Why PowerShell and not the portal wizard?** Your account is User Administrator **scoped to `AU-st<NN>`**. The portal wizard (*New user* > *Assignments* > *Add administrative unit*) creates the user first, then **adds an existing user** to the AU in a second call. Adding an existing object to an AU requires Privileged Role Administrator: the second call is denied. Microsoft Graph can **create the user directly inside the AU** in a single call (`POST /directory/administrativeUnits/{id}/members` with a full user object): this is what a delegated administrator is allowed to do.
+
 ### Steps
-1. Entra admin center > **Users** > **All users** > **New user** > **Create new user**.
-2. **Basics** tab:
-   - User principal name: `st<NN>-claire.dubois`, domain `<DOMAIN>`
-   - Display name: `Claire Dubois`
-   - Password: auto-generated, **write it down**
-   - Account enabled: checked
-3. **Properties** tab:
-   - First name `Claire`, Last name `Dubois`
-   - Job title `Operations Director`, Department `Direction`
-   - Company name `Arveo-st<NN>`
-   - Usage location: `France`
-4. **Assignments** tab > **Add administrative unit** > `AU-st<NN>` `[TO VERIFY]` exact tab label in the wizard.
-5. **Review + create** > **Create**.
-   Expected result: "User created" notification.
-6. Repeat steps 1 to 5 for Léa Martin (`st<NN>-lea.martin`) and Karim Haddad (`st<NN>-karim.haddad`), write down their passwords.
-7. Check the administrative unit content (Cloud Shell PowerShell, variables defined at the top of the module).
+1. Check the AU variable from the top of the module.
+   ```powershell
+   $au.DisplayName
+   $Domain = "Kovalibre635.onmicrosoft.com"
+   $NN = "NN"   # le numéro du stagiaire, sur deux chiffres
+   ```
+   Expected result: `AU-st07` (with your number). If empty, rerun the block at the top of the module.
+
+2. Describe the three users.
+   ```powershell
+   $team = @(
+     @{ Nick="claire.dubois"; First="Claire"; Last="Dubois"; Dept="Direction";  Title="Operations Director" }
+     @{ Nick="lea.martin";    First="Léa";    Last="Martin"; Dept="Logistique"; Title="Dock manager" }
+     @{ Nick="karim.haddad";  First="Karim";  Last="Haddad"; Dept="IT";         Title="Systems administrator" }
+   )
+   ```
+
+3. Create them **inside** `AU-st<NN>`, with a generated password to be changed at first sign-in.
+   ```powershell
+   foreach ($p in $team) {
+     $upn = "st$NN-$($p.Nick)@$Domain"
+     $pw  = "Arv-" + (Get-Random -Minimum 100000 -Maximum 999999) + "-Lab!"
+     $body = @{
+       "@odata.type"     = "#microsoft.graph.user"
+       accountEnabled    = $true
+       displayName       = "$($p.First) $($p.Last)"
+       givenName         = $p.First
+       surname           = $p.Last
+       mailNickname      = "st$NN-$($p.Nick)"
+       userPrincipalName = $upn
+       jobTitle          = $p.Title
+       department        = $p.Dept
+       companyName       = "Arveo-st$NN"
+       usageLocation     = "FR"
+       passwordProfile   = @{ password = $pw; forceChangePasswordNextSignIn = $true }
+     }
+     New-MgDirectoryAdministrativeUnitMember -AdministrativeUnitId $au.Id -BodyParameter $body | Out-Null
+     Write-Host "$upn  password: $pw"
+   }
+   ```
+   Expected result: three lines `st07-…@<DOMAIN>  password: Arv-…-Lab!`. **Write down the three passwords** (Léa Martin's is used in Lab 01.3).
+
+4. Check the administrative unit content.
    ```powershell
    Get-MgDirectoryAdministrativeUnitMember -AdministrativeUnitId $au.Id -All |
      ForEach-Object { $_.AdditionalProperties.userPrincipalName }
@@ -78,15 +85,25 @@ The `department` values stay in French: they are used by dynamic rules shared wi
    st07-lea.martin@arveoformation.onmicrosoft.com
    st07-karim.haddad@arveoformation.onmicrosoft.com
    ```
-8. Test the delegation in the portal:
+
+5. Find the users in the portal: Entra admin center > **Identity** > **Roles & admins** > **Admin units** > `AU-st<NN>` > **Users**. Open `Claire Dubois` > **Properties** and check job title, department, company name and usage location.
+
+6. Observe the portal limitation: in `AU-st<NN>` > **Users**, the **Add member** button is greyed out. Explain why in one sentence (hint: the ℹ️ note above).
+
+7. Test the delegation in the portal:
    - Open `st<NN>-karim.haddad` > **Reset password**: allowed, new password displayed.
    - Open another trainee's user (e.g. `st<NN+1>-claire.dubois`): **Reset password** greyed out or denied.
 
+   > ⚠️ If the trainer granted you User Administrator at **tenant** scope for this session, the second reset is **allowed**: the tenant-wide role overrides the AU boundary. Discuss with the group what this means for least privilege.
+
 ### Success criteria
 - [ ] 3 users `st<NN>-*` members of `AU-st<NN>`
-- [ ] Attributes `department`, `jobTitle`, `companyName`, `usageLocation` filled in (check: `Get-MgUser -UserId "st$NN-lea.martin@$Domain" -Property department,jobTitle,companyName,usageLocation | Format-List department,jobTitle,companyName,usageLocation`)
-- [ ] Password reset allowed in your AU, denied outside it
-
+- [ ] Attributes `department`, `jobTitle`, `companyName`, `usageLocation` filled in, check:
+  ```powershell
+  Invoke-MgGraphRequest -Method GET -Uri "v1.0/users/st$NN-lea.martin@$Domain`?`$select=department,jobTitle,companyName,usageLocation"
+  ```
+- [ ] Password reset allowed in your AU, denied outside it (unless tenant-wide role, see ⚠️)
+- [ ] You can explain why **Add member** is greyed out for a delegated AU administrator
 ---
 
 ## Exercise 01.2 ⭐⭐ — Import the operations teams and create groups (semi-autonomous)
