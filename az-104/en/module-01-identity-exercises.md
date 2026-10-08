@@ -40,7 +40,7 @@ The `department` values stay in French: they are used by dynamic rules shared wi
    ```
    Expected result: `AU-st07` (with your number). If empty, rerun the block at the top of the module.
 
-2. Describe the three users.
+2. Create the three users.
    ```powershell
    $NN = "01"; $Domain = "Kovalibre635.onmicrosoft.com"
    $team = @(
@@ -60,10 +60,11 @@ The `department` values stay in French: they are used by dynamic rules shared wi
    ```
    Expected result: three lines `st07-…@<DOMAIN>  password: Arv-…-Lab!`. **Write down the three passwords** (Léa Martin's is used in Lab 01.3).
 
-4. Check the administrative unit content.
+4. Check the user exist.
    ```powershell
-   Get-MgDirectoryAdministrativeUnitMember -AdministrativeUnitId $au.Id -All |
-     ForEach-Object { $_.AdditionalProperties.userPrincipalName }
+     (Invoke-MgGraphRequest -Method GET -Uri "v1.0/users?`$filter=startswith(userPrincipalName,'st$NN-')&`$select=displayName,userPrincipalName,department,jobTitle,companyName,usageLocation").value |
+     ForEach-Object { [pscustomobject]$_ } |
+     Format-Table displayName, userPrincipalName, department, jobTitle, companyName, usageLocation
    ```
    Expected result:
    ```
