@@ -129,9 +129,30 @@ Import-Csv ./arveo-users.csv | ForEach-Object {
   Write-Host "+ $nick"
 }
 ```
-3. Create in `AU-st<NN>` the assigned security group `st<NN>-GRP-IT` and add Karim Haddad and Thomas Roux.
-4. Create in `AU-st<NN>` the dynamic security group `st<NN>-GRP-Logistique` whose rule keeps only users of the Logistique department of YOUR entity.
-5. Check the members of both groups.
+2. Create in `AU-st<NN>` the assigned security group `st<NN>-GRP-IT` and add Karim Haddad and Thomas Roux.
+```powershell
+$it = Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
+  displayName="st$NN-GRP-IT"; mailNickname="st$NN-GRP-IT"
+  securityEnabled=$true; mailEnabled=$false }
+
+foreach ($n in "karim.haddad","thomas.roux") {
+  $u = Invoke-MgGraphRequest -Method GET -Uri "v1.0/users/st$NN-$n@$Domain"
+  Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups/$($it.id)/members/`$ref" `
+    -Body @{ "@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$($u.id)" }
+  Write-Host "+ $n -> st$NN-GRP-IT"
+}
+```
+
+3. Create in `AU-st<NN>` the dynamic security group `st<NN>-GRP-Logistique` whose rule keeps only users of the Logistique department of YOUR entity.
+```powershell
+Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
+  displayName="st$NN-GRP-Logistique"; mailNickname="st$NN-GRP-Logistique"
+  securityEnabled=$true; mailEnabled=$false
+  groupTypes=@("DynamicMembership")
+  membershipRule="(user.department -eq `"Logistique`") and (user.companyName -eq `"Arveo-st$NN`")"
+  membershipRuleProcessingState="On" } | Out-Null
+```
+4. Check the members of both groups.
 
 **Hints** :
 - Same method as the "Create a user inside your AU" slide, inside an `Import-Csv | ForEach-Object` loop.
