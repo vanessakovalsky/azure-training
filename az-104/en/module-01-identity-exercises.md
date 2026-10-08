@@ -143,7 +143,7 @@ foreach ($n in "karim.haddad","thomas.roux") {
 }
 ```
 
-3. Create in `AU-st<NN>` the dynamic security group `st<NN>-GRP-Logistique` whose rule keeps only users of the Logistique department of YOUR entity.
+3. Create the dynamic security group `st<NN>-GRP-Logistique` whose rule keeps only users of the Logistique department of YOUR entity.
 ```powershell
 Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
   displayName="st$NN-GRP-Logistique"; mailNickname="st$NN-GRP-Logistique"
@@ -210,9 +210,11 @@ Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
    Expected result: "Your password has been reset" message.
 8. Find the event in the audit logs.
    ```powershell
-   Get-MgAuditLogDirectoryAudit -Filter "loggedByService eq 'Self-service Password Management'" -Top 50 |
-     Where-Object { $_.TargetResources.UserPrincipalName -like "st$NN-*" } |
-     Select-Object ActivityDateTime, ActivityDisplayName, Result
+      Connect-MgGraph -Scopes "User.ReadWrite.All","Group.ReadWrite.All","AdministrativeUnit.ReadWrite.All","AuditLog.Read.All","User.Invite.All" -UseDeviceCode -NoWelcome
+      (Invoke-MgGraphRequest -Method GET -Uri "v1.0/auditLogs/directoryAudits?`$filter=loggedByService eq 'Self-service Password Management'&`$top=50").value |
+     Where-Object { $_.targetResources.userPrincipalName -like "st$NN-*" } |
+     ForEach-Object { [pscustomobject]@{ Date=$_.activityDateTime; Activite=$_.activityDisplayName; Resultat=$_.result } } |
+     Format-Table
    ```
    Expected result (excerpt):
    ```
