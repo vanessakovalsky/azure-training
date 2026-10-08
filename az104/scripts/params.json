@@ -1,0 +1,5 @@
+{
+     "tagName": { "type": "String", "metadata": { "displayName": "Nom du tag" } },
+     "effect": { "type": "String", "allowedValues": [ "Audit", "Deny", "Disabled" ],
+                 "defaultValue": "Audit" }
+   }

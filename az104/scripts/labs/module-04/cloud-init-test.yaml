@@ -1,0 +1,22 @@
+#cloud-config
+# cloud-init-test.yaml — VMs de test du module 4 (vm-stNN-test-web, vm-stNN-test-data)
+# Serveur HTTP minimal (python3 de l'image Ubuntu, aucun accès Internet requis)
+# en écoute sur 80/TCP et 1433/TCP ; la réponse est le nom d'hôte de la VM.
+write_files:
+  - path: /etc/systemd/system/arveo-test@.service
+    content: |
+      [Unit]
+      Description=Serveur HTTP de test Arveo sur le port %i
+      After=network-online.target
+
+      [Service]
+      ExecStart=/usr/bin/python3 -m http.server %i --directory /var/www/arveo
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+runcmd:
+  - mkdir -p /var/www/arveo
+  - hostname > /var/www/arveo/index.html
+  - systemctl daemon-reload
+  - systemctl enable --now arveo-test@80.service arveo-test@1433.service

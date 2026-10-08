@@ -1,0 +1,27 @@
+{
+  "name": "pol-files-arveo",
+  "properties": {
+    "backupManagementType": "AzureStorage",
+    "workLoadType": "AzureFileShare",
+    "schedulePolicy": {
+      "schedulePolicyType": "SimpleSchedulePolicy",
+      "scheduleRunFrequency": "Daily",
+      "scheduleRunTimes": [
+        "2026-01-01T20:00:00Z"
+      ]
+    },
+    "retentionPolicy": {
+      "retentionPolicyType": "LongTermRetentionPolicy",
+      "dailySchedule": {
+        "retentionTimes": [
+          "2026-01-01T20:00:00Z"
+        ],
+        "retentionDuration": {
+          "count": 30,
+          "durationType": "Days"
+        }
+      }
+    },
+    "timeZone": "Romance Standard Time"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "enabled": true,
+      "name": "pod-cycle-de-vie",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": [ "blockBlob" ],
+          "prefixMatch": [ "pod/" ]
+        },
+        "actions": {
+          "baseBlob": {
+            "tierToCool": { "daysAfterModificationGreaterThan": 30 },
+            "tierToCold": { "daysAfterModificationGreaterThan": 90 },
+            "tierToArchive": { "daysAfterModificationGreaterThan": 180 },
+            "delete": { "daysAfterModificationGreaterThan": 3650 }
+          },
+          "version": {
+            "delete": { "daysAfterCreationGreaterThan": 90 }
+          }
+        }
+      }
+    }
+  ]
+}

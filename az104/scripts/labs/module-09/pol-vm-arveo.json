@@ -1,0 +1,42 @@
+{
+  "name": "pol-vm-arveo",
+  "properties": {
+    "backupManagementType": "AzureIaasVM",
+    "policyType": "V2",
+    "instantRpRetentionRangeInDays": 7,
+    "schedulePolicy": {
+      "schedulePolicyType": "SimpleSchedulePolicyV2",
+      "scheduleRunFrequency": "Daily",
+      "dailySchedule": {
+        "scheduleRunTimes": [
+          "2026-01-01T22:00:00Z"
+        ]
+      }
+    },
+    "retentionPolicy": {
+      "retentionPolicyType": "LongTermRetentionPolicy",
+      "dailySchedule": {
+        "retentionTimes": [
+          "2026-01-01T22:00:00Z"
+        ],
+        "retentionDuration": {
+          "count": 30,
+          "durationType": "Days"
+        }
+      },
+      "weeklySchedule": {
+        "daysOfTheWeek": [
+          "Sunday"
+        ],
+        "retentionTimes": [
+          "2026-01-01T22:00:00Z"
+        ],
+        "retentionDuration": {
+          "count": 12,
+          "durationType": "Weeks"
+        }
+      }
+    },
+    "timeZone": "Romance Standard Time"
+  }
+}

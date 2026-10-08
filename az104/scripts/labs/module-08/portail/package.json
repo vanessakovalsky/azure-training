@@ -1,0 +1,13 @@
+{
+  "name": "arveo-portail",
+  "version": "3.0.0",
+  "description": "Portail client Arveo - version PaaS (module 8)",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

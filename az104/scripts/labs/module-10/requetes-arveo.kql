@@ -1,0 +1,41 @@
+// requetes-arveo.kql — lab 10.3 : requêtes d'exploitation d'Arvéo sur log-stNN-shared
+// Exécution : portail (espace de travail › Journaux, mode KQL) ou Cloud Shell :
+//   kql "$(sed -n '/^\/\/ Q1/,/^\/\/ Q2/p' scripts/labs/module-10/requetes-arveo.kql)"
+// Compléter chaque TODO. Solutions : module-10-surveillance-corrections.md (lab 10.3).
+
+// Q1 — État des pulsations de l'agent Azure Monitor (requête complète)
+Heartbeat
+| where TimeGenerated > ago(1h)
+| summarize Dernier = max(TimeGenerated) by Computer
+| extend Minutes = datetime_diff('minute', now(), Dernier)
+| extend Etat = iff(Minutes > 5, "SILENCIEUX", "OK")
+| order by Minutes desc
+
+// Q2 — CPU moyen et maximal par minute des serveurs web, dernière heure
+Perf
+| where TimeGenerated > ago(1h)
+| where ObjectName == "Processor" and CounterName == "% Processor Time"
+// TODO : ne garder que l'instance totale du processeur
+// TODO : moyenne (CpuMoyen) et maximum (CpuMax) par serveur et par minute
+// TODO (portail) : tracer une courbe
+
+// Q3 — Événements Syslog par facilité et par niveau, 4 dernières heures
+Syslog
+// TODO : filtre de période
+// TODO : nombre d'événements par Facility et SeverityLevel, tri décroissant
+
+// Q4 — Travaux de sauvegarde depuis 13:30 (heure de Paris = 11:30 UTC en octobre)
+AddonAzureBackupJobs
+| where TimeGenerated > ago(4h)
+// TODO : nom de l'élément protégé (BackupItemFriendlyName de CoreAzureBackup)
+// TODO : colonnes Heure, Element, Operation, Etat, DureeSec, tri par heure décroissante
+
+// Q5 — Disponibilité du pool bp-web par tranche de 5 min (métriques du Load Balancer)
+AzureMetrics
+// TODO : MetricName DipAvailability, ressource lbe-stNN-web (comparaison insensible à la casse)
+// TODO : moyenne de la colonne Average par tranche de 5 min, tri chronologique
+
+// Q6 — Volume facturable ingéré par table sur 24 h (Mo)
+Usage
+// TODO : 24 dernières heures, données facturables seulement
+// TODO : somme de Quantity par DataType, arrondie à 2 décimales, tri décroissant

@@ -1,0 +1,26 @@
+#cloud-config
+# cloud-init-api.yaml — instances de l'API de suivi des colis (vmss-stNN-api, défi 07.5)
+# nginx écoute UNIQUEMENT sur le port 8080 et renvoie un JSON : service, instance, zone.
+# Exécuté au premier démarrage de CHAQUE instance, y compris celles ajoutées par la mise à l'échelle.
+# Prérequis : accès sortant à Internet (passerelle NAT ng-stNN-app sur snet-app).
+package_update: true
+packages:
+  - nginx
+runcmd:
+  - |
+    ZONE=$(curl -s -H Metadata:true --max-time 5 \
+      "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text")
+    printf '{"service":"api-suivi-colis","instance":"%s","zone":"%s"}\n' \
+      "$(hostname)" "${ZONE:-aucune}" > /var/www/html/index.json
+    cat > /etc/nginx/sites-available/default <<'EOF'
+    server {
+      listen 8080 default_server;
+      root /var/www/html;
+      location / {
+        default_type application/json;
+        try_files /index.json =404;
+      }
+    }
+    EOF
+  - systemctl enable nginx
+  - systemctl restart nginx
