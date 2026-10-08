@@ -129,7 +129,7 @@ Import-Csv ./arveo-users.csv | ForEach-Object {
   Write-Host "+ $nick"
 }
 ```
-2. Create in `AU-st<NN>` the assigned security group `st<NN>-GRP-IT` and add Karim Haddad and Thomas Roux.
+2. Create the assigned security group `st<NN>-GRP-IT` and add Karim Haddad and Thomas Roux.
 ```powershell
 $it = Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
   displayName="st$NN-GRP-IT"; mailNickname="st$NN-GRP-IT"
