@@ -42,33 +42,19 @@ The `department` values stay in French: they are used by dynamic rules shared wi
 
 2. Describe the three users.
    ```powershell
+   $NN = "01"; $Domain = "Kovalibre635.onmicrosoft.com"
    $team = @(
      @{ Nick="claire.dubois"; First="Claire"; Last="Dubois"; Dept="Direction";  Title="Operations Director" }
      @{ Nick="lea.martin";    First="Léa";    Last="Martin"; Dept="Logistique"; Title="Dock manager" }
      @{ Nick="karim.haddad";  First="Karim";  Last="Haddad"; Dept="IT";         Title="Systems administrator" }
    )
-   ```
-
-3. Create them **inside** `AU-st<NN>`, with a generated password to be changed at first sign-in.
-   ```powershell
    foreach ($p in $team) {
-     $upn = "st$NN-$($p.Nick)@$Domain"
-     $pw  = "Arv-" + (Get-Random -Minimum 100000 -Maximum 999999) + "-Lab!"
-     $body = @{
-       "@odata.type"     = "#microsoft.graph.user"
-       accountEnabled    = $true
-       displayName       = "$($p.First) $($p.Last)"
-       givenName         = $p.First
-       surname           = $p.Last
-       mailNickname      = "st$NN-$($p.Nick)"
-       userPrincipalName = $upn
-       jobTitle          = $p.Title
-       department        = $p.Dept
-       companyName       = "Arveo-st$NN"
-       usageLocation     = "FR"
-       passwordProfile   = @{ password = $pw; forceChangePasswordNextSignIn = $true }
-     }
-     New-MgDirectoryAdministrativeUnitMember -AdministrativeUnitId $au.Id -BodyParameter $body | Out-Null
+     $upn = "st$NN-$($p.Nick)@$Domain"; $pw = "Arv-" + (Get-Random -Min 100000 -Max 999999) + "-Lab!"
+     Invoke-MgGraphRequest -Method POST -Uri "v1.0/users" -Body @{
+       accountEnabled=$true; displayName="$($p.First) $($p.Last)"; givenName=$p.First; surname=$p.Last
+       mailNickname="st$NN-$($p.Nick)"; userPrincipalName=$upn; jobTitle=$p.Title; department=$p.Dept
+       companyName="Arveo-st$NN"; usageLocation="FR"
+       passwordProfile=@{ password=$pw; forceChangePasswordNextSignIn=$true } } | Out-Null
      Write-Host "$upn  password: $pw"
    }
    ```
