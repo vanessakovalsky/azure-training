@@ -163,7 +163,14 @@ Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
 - Documentation: https://learn.microsoft.com/graph/api/administrativeunit-post-members and https://learn.microsoft.com/entra/identity/users/groups-dynamic-membership
 
 **Success criteria** :
-- [ ]  lists 9 users with lab 1.1 step3 command and 2 groups with command : ```Get-MgGroup -Filter "startswith(displayName, 'st$NN')"
+- [ ]  lists 9 users with lab 1.1 step3 command and 2 groups with command :
+```powershell
+(Invoke-MgGraphRequest -Method GET -Uri "v1.0/groups?`$filter=startswith(displayName,'st$NN-')&`$select=displayName,groupTypes,membershipRule").value |
+  ForEach-Object { [pscustomobject]@{
+    Nom  = $_.displayName
+    Type = if ($_.groupTypes -contains 'DynamicMembership') { 'Dynamique' } else { 'Affecté' }
+    Regle = $_.membershipRule } } |
+  Format-Table -AutoSize``
 - [ ] `st<NN>-GRP-IT` contains exactly Karim Haddad and Thomas Roux
 - [ ] `st<NN>-GRP-Logistique` contains exactly Léa Martin, Hugo Bernard, Sofia Moreau, Yanis Lefebvre (processing delay possible)
 - [ ] No other trainee's user in `st<NN>-GRP-Logistique`
