@@ -5,6 +5,16 @@ Variables utilisées dans ce module :
 - `<DOMAINE>` = domaine du tenant de formation, fourni par la formatrice (ex. `arveoformation.onmicrosoft.com`)
 - `<MOT_DE_PASSE_TEMPORAIRE>` = mot de passe remis par la formatrice
 
+## Niveaux et marqueurs
+
+| Marqueur | Signification |
+|---|---|
+| ⭐ | **Guidé** : étapes détaillées, commandes prêtes à l'emploi |
+| ⭐⭐ | **Semi-autonome** : objectif et indices fournis, commandes à construire |
+| ⭐⭐⭐ | **Autonome** : objectif seul, commandes et architecture à concevoir |
+| 🔸 **Optionnel** | Le script de rattrapage indiqué sous le titre crée les mêmes ressources ; l'exercice peut être fait en autonomie si vous êtes en avance |
+| 🚀 **Bonus** | Approfondissement facultatif ; ne bloque aucun module suivant |
+
 ## Lab 00.1 ⭐ — Première connexion et vérification des droits (guidé)
 **Durée** : 20 min · **Objectif** : se connecter au portail Azure avec MFA, ouvrir Cloud Shell et vérifier son périmètre
 **Contexte** : premier jour de l'équipe d'administration Azure d'Arvéo ; les comptes ont été créés par la formatrice.

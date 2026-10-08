@@ -182,6 +182,8 @@ Mandatory tags on every resource (module 2 policy): `Projet=Arveo`, `Environneme
 
 ## Exercise 03.3 ⭐⭐ — Az PowerShell: idempotent storage account and inventory (semi-autonomous)
 **Duration** : 10 min · **Objective** : create a resource with a reusable script and produce a report with Az PowerShell (objective 4)
+
+> 🔸 **Adjusted session**: this exercise is covered as a trainer demonstration. Complete it independently once you finish labs 03.1 and 03.2, during M4 labs.
 **Context** : Arvéo VMs (M7) will write their boot diagnostics to a dedicated storage account. IT requires a script that can be rerun without error and a CSV inventory of the resources of each environment.
 
 **Assignment** :
@@ -212,6 +214,8 @@ Mandatory tags on every resource (module 2 policy): `Projet=Arveo`, `Environneme
 
 ## Exercise 03.4 ⭐⭐ — Read an ARM JSON template, deploy it, convert it to Bicep (semi-autonomous)
 **Duration** : 10 min · **Objective** : read and deploy an ARM JSON template, then convert it to Bicep (objective 4)
+
+> 🔸 **Adjusted session**: this exercise is projected as a trainer demonstration. Complete it independently once you finish labs 03.1 and 03.2, during M4 labs.
 **Context** : Arvéo's former contractor left an ARM JSON template that creates the managed identity used later by deployment scripts. The decision has been made to migrate all templates to Bicep.
 
 **Provided file** : create `identite.json` in Cloud Shell (`code identite.json`) with this exact content (also available as `scripts/labs/module-03/identite.json`).
@@ -285,6 +289,8 @@ Mandatory tags on every resource (module 2 policy): `Projet=Arveo`, `Environneme
 
 ## Challenge 03.5 ⭐⭐⭐ — Bring the foundation under IaC and fix a drift (autonomous)
 **Duration** : 10 min · **Objective** : deploy a parameterized Bicep file reproducibly after a `what-if` check (objective 4)
+
+> 🔸 **Adjusted session**: replaced by `./scripts/m3/deploy.sh <NN>` (deploys all three foundation resources in 1–2 min). Complete it independently if you finish early.
 **Context** : the `rg-stNN-shared` foundation was built with three different tools. Arvéo IT wants a single file, the source of truth, able to recreate the foundation identically and to fix any manual change.
 
 **Assignment** :

@@ -130,8 +130,10 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 
 ---
 
-## Défi 05.3 ⭐⭐⭐ — Flux hybrides Lyon ↔ Arvéo sous IaC (autonome)
+## Défi 05.3 ⭐⭐⭐ 🔸 Optionnel — Flux hybrides Lyon ↔ Arvéo sous IaC (autonome)
 **Durée** : 50 min · **Objectif** : router le trafic hybride à travers le pare-feu et prouver les flux autorisés et bloqués (objectif 6)
+
+> 🔸 **Optionnel** — Crée : table de routes `rt-st<NN>-gateway` (associée à `GatewaySubnet`, routes vers les spokes via le pare-feu), groupe `rcg-lyon` dans `afwp-st<NN>-hub`, règle `Allow-SQL-From-Lyon` dans `nsg-st<NN>-data`. En session ajustée : déployer directement `scripts/m5/catch-up/module-05/lyon-connectivity.bicep` (commenté, fourni par la formatrice). Rattrapage complet : `PSK='<CLE_PARTAGEE>' ./scripts/m5/catch-up/module-05/deploy.sh <NN>`
 **Contexte** : la DSI valide la matrice de flux entre le site de Lyon et Azure pendant la période de migration. Les applications de Lyon doivent joindre le portail web et la base de données d'Azure ; aucun flux ne doit partir d'Azure vers Lyon. La configuration doit être versionnée et rejouable, au même titre que les règles du module 4.
 
 **Matrice de flux** :

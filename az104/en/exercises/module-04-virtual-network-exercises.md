@@ -256,8 +256,10 @@ st07 7 rg-st07-hub rg-st07-spoke
 
 ---
 
-## Challenge 04.4 ⭐⭐⭐ — Firewall rules as IaC (autonomous)
+## Challenge 04.4 ⭐⭐⭐ 🔸 Optional — Firewall rules as IaC (autonomous)
 **Duration** : 20 min · **Objective** : define the hub filtering policy in Bicep and check allowed and blocked flows (objective 5)
+
+> 🔸 **Optional** — Creates: rule collection group `rcg-arveo` in `afwp-st<NN>-hub` (network and application rules, Internet filtering for spokes). Used in M5 (inter-spoke flows and Internet egress via firewall). Catch-up: `./scripts/m4/catch-up/module-04/deploy.sh <NN>`
 **Context** : Arvéo's flow matrix has been approved by IT. It must be applied by a versioned file, replayable on every environment, and proven by reproducible tests.
 
 **Flow matrix** :
@@ -292,8 +294,10 @@ st07 7 rg-st07-hub rg-st07-spoke
 
 ---
 
-## Exercise 04.5 ⭐⭐ — Private and public DNS zones (semi-autonomous)
+## Exercise 04.5 ⭐⭐ 🔸 Optional — Private and public DNS zones (semi-autonomous)
 **Duration** : 30 min · **Objective** : resolve names with Azure DNS public and private zones (objective 5)
+
+> 🔸 **Optional** — Creates: private zone `arveo.internal` (links `link-hub`, `link-spoke-app`, `link-spoke-data`, A record `sql`) and public zone `arveo-st<NN>.fr` in `rg-st<NN>-hub`. Used in M6 (DNS resolution for private endpoints) and M7 (`sql.arveo.internal` from application VMs). Catch-up: `./scripts/m4/catch-up/module-04/deploy.sh <NN>`
 **Context** : Arvéo applications must reach the database through a stable name, independent of the server address. The future public site will be published behind the firewall.
 **Prerequisites** : challenge 04.4 completed (or catch-up script), test VMs running.
 

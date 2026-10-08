@@ -130,8 +130,10 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 
 ---
 
-## Challenge 05.3 ⭐⭐⭐ — Lyon ↔ Arvéo hybrid flows as IaC (autonomous)
+## Challenge 05.3 ⭐⭐⭐ 🔸 Optional — Lyon ↔ Arvéo hybrid flows as IaC (autonomous)
 **Duration** : 50 min · **Objective** : route hybrid traffic through the firewall and prove allowed and blocked flows (objective 6)
+
+> 🔸 **Optional** — Creates: route table `rt-st<NN>-gateway` (associated with `GatewaySubnet`, routes to spokes via firewall), rule collection group `rcg-lyon` in `afwp-st<NN>-hub`, NSG rule `Allow-SQL-From-Lyon` in `nsg-st<NN>-data`. Adjusted session: deploy `scripts/m5/catch-up/module-05/lyon-connectivity.bicep` directly (commented, provided by trainer). Full catch-up: `PSK='<SHARED_KEY>' ./scripts/m5/catch-up/module-05/deploy.sh <NN>`
 **Context** : IT approves the flow matrix between the Lyon site and Azure for the migration period. Lyon applications must reach the web portal and the Azure database; no flow may leave Azure towards Lyon. The configuration must be versioned and replayable, like the module 4 rules.
 
 **Flow matrix** :

@@ -182,6 +182,8 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
 
 ## Exercice 03.3 ⭐⭐ — PowerShell Az : compte de stockage idempotent et inventaire (semi-autonome)
 **Durée** : 10 min · **Objectif** : créer une ressource par script réutilisable et produire un rapport avec PowerShell Az (objectif 4)
+
+> 🔸 **Session ajustée** : cet exercice est traité en démonstration par la formatrice. À faire en autonomie si vous avez terminé les labs 03.1 et 03.2, pendant les labs du M4.
 **Contexte** : les VMs d'Arvéo (M7) écriront leurs diagnostics de démarrage dans un compte de stockage dédié. La DSI exige un script rejouable sans erreur et un inventaire CSV des ressources de chaque environnement.
 
 **Énoncé** :
@@ -212,6 +214,8 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
 
 ## Exercice 03.4 ⭐⭐ — Lire un modèle ARM JSON, le déployer, le convertir en Bicep (semi-autonome)
 **Durée** : 10 min · **Objectif** : lire et déployer un modèle ARM JSON, puis le convertir en Bicep (objectif 4)
+
+> 🔸 **Session ajustée** : cet exercice est projeté en démonstration par la formatrice. À faire en autonomie si vous avez terminé les labs 03.1 et 03.2, pendant les labs du M4.
 **Contexte** : l'ancien prestataire d'Arvéo a laissé un modèle ARM JSON qui crée l'identité managée utilisée plus tard par les scripts de déploiement. La décision est prise de migrer tous les modèles vers Bicep.
 
 **Fichier fourni** : créer `identite.json` dans Cloud Shell (`code identite.json`) avec ce contenu exact.
@@ -285,6 +289,8 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
 
 ## Défi 03.5 ⭐⭐⭐ — Reprendre le socle sous IaC et corriger une dérive (autonome)
 **Durée** : 10 min · **Objectif** : déployer un fichier Bicep paramétré de façon reproductible après contrôle `what-if` (objectif 4)
+
+> 🔸 **Session ajustée** : remplacé par `./scripts/m3/deploy.sh <NN>` (déploie les trois ressources du socle en 1–2 min). À faire en autonomie si vous êtes en avance.
 **Contexte** : le socle `rg-stNN-shared` a été construit avec trois outils différents. La DSI d'Arvéo veut un fichier unique, source de vérité, capable de recréer le socle à l'identique et de corriger toute modification manuelle.
 
 **Énoncé** :

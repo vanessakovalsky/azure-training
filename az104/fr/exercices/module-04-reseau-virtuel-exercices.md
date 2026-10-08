@@ -256,8 +256,10 @@ st07 7 rg-st07-hub rg-st07-spoke
 
 ---
 
-## Défi 04.4 ⭐⭐⭐ — Règles du pare-feu sous IaC (autonome)
+## Défi 04.4 ⭐⭐⭐ 🔸 Optionnel — Règles du pare-feu sous IaC (autonome)
 **Durée** : 20 min · **Objectif** : définir la politique de filtrage du hub en Bicep et vérifier les flux autorisés et bloqués (objectif 5)
+
+> 🔸 **Optionnel** — Crée : groupe de collections `rcg-arveo` dans `afwp-st<NN>-hub` (règles réseau et d'application, filtrage Internet des spokes). Utilisé en M5 (flux inter-spokes et sortie Internet via pare-feu). Rattrapage : `./scripts/m4/catch-up/module-04/deploy.sh <NN>`
 **Contexte** : la matrice de flux d'Arvéo est validée par la DSI. Elle doit être appliquée par un fichier versionné, rejouable sur chaque environnement, et prouvée par des tests reproductibles.
 
 **Matrice de flux** :
@@ -292,8 +294,10 @@ st07 7 rg-st07-hub rg-st07-spoke
 
 ---
 
-## Exercice 04.5 ⭐⭐ — Zones DNS privée et publique (semi-autonome)
+## Exercice 04.5 ⭐⭐ 🔸 Optionnel — Zones DNS privée et publique (semi-autonome)
 **Durée** : 30 min · **Objectif** : résoudre des noms avec des zones Azure DNS publiques et privées (objectif 5)
+
+> 🔸 **Optionnel** — Crée : zone privée `arveo.internal` (liens `link-hub`, `link-spoke-app`, `link-spoke-data`, enregistrement A `sql`) et zone publique `arveo-st<NN>.fr` dans `rg-st<NN>-hub`. Utilisé en M6 (résolution DNS pour les private endpoints) et M7 (`sql.arveo.internal` depuis les VMs applicatives). Rattrapage : `./scripts/m4/catch-up/module-04/deploy.sh <NN>`
 **Contexte** : les applications d'Arvéo doivent joindre la base de données par un nom stable, indépendant de l'adresse du serveur. Le futur site public sera publié derrière le pare-feu.
 **Prérequis** : défi 04.4 terminé (ou script de rattrapage), VMs de test démarrées.
 

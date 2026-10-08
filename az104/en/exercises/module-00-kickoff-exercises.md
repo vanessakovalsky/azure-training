@@ -5,6 +5,16 @@ Variables used in this module:
 - `<DOMAIN>` = training tenant domain, provided by the trainer (e.g. `arveoformation.onmicrosoft.com`)
 - `<TEMPORARY_PASSWORD>` = password handed out by the trainer
 
+## Levels and markers
+
+| Marker | Meaning |
+|---|---|
+| ⭐ | **Guided**: detailed steps, ready-to-use commands |
+| ⭐⭐ | **Semi-autonomous**: objective and hints provided, commands to build |
+| ⭐⭐⭐ | **Autonomous**: objective only, commands and architecture to design |
+| 🔸 **Optional** | The catch-up script shown below the title creates the same resources; complete the exercise independently if you finish early |
+| 🚀 **Bonus** | Optional further exploration; does not block any following module |
+
 ## Lab 00.1 ⭐ — First sign-in and permission check (guided)
 **Duration** : 20 min · **Objective** : sign in to the Azure portal with MFA, open Cloud Shell and check one's scope
 **Context** : first day of Arvéo's Azure administration team; accounts were created by the trainer.
