@@ -119,7 +119,7 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 - State: properties `connectionStatus`, `ingressBytesTransferred`, `egressBytesTransferred` of `az network vpn-connection show`.
 - Effective routes: `az network nic show-effective-route-table` (running VM).
 - Test from Lyon: `lyon "try { (Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 http://<IP>).Content.Trim() } catch { 'ECHEC' }"` (30 to 60 s).
-- Next hop of a West Europe VM: West Europe Network Watcher, same `show-next-hop` command.
+- Next hop of the Lyon VM: France Central Network Watcher, same `show-next-hop` command.
 - Step 9: `GatewaySubnet` routes (no UDR at this stage) and the `0.0.0.0/0` route of `snet-web` (module 4).
 
 **Success criteria** :

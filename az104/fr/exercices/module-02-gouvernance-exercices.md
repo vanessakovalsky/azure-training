@@ -47,7 +47,7 @@ Résultat attendu : `Stagiaire : st07 · Abonnement : 1a2b3c4d-…` (identifiant
    rg-st07-spoke   francecentral
    rg-st07-data    francecentral
    rg-st07-app     francecentral
-   rg-st07-lyon    westeurope
+   rg-st07-lyon    francecentral
    ```
 
 2. Taguer `rg-stNN-hub` depuis le portail.
@@ -132,15 +132,15 @@ Résultat attendu : `Stagiaire : st07 · Abonnement : 1a2b3c4d-…` (identifiant
 
 ## Exercice 02.2 ⭐⭐ — Garde-fous de région et de taille de VM (semi-autonome)
 **Durée** : 25 min · **Objectif** : 2 (appliquer une Azure Policy refusant une ressource non conforme)
-**Contexte** : le RSSI d'Arvéo impose la localisation des données en France. Seul le site de Lyon simulé (`rg-stNN-lyon`) reste en West Europe. Pour maîtriser le budget, seules les tailles de VM de la gamme B validées par la DSI sont autorisées.
+**Contexte** : le RSSI d'Arvéo impose la localisation des données en France. Le site de Lyon simulé (`rg-stNN-lyon`) est en France Central. Pour maîtriser le budget, seules les tailles de VM de la gamme B validées par la DSI sont autorisées.
 
 **Énoncé** : obtenir les garde-fous suivants, uniquement avec des stratégies intégrées.
 
 | Exigence | Scope | Paramètre |
 |---|---|---|
 | Régions autorisées | `rg-stNN-shared`, `-hub`, `-spoke`, `-data`, `-app` | `francecentral` |
-| Régions autorisées | `rg-stNN-lyon` | `westeurope` |
-| Tailles de VM autorisées | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_B2als_v2`, `Standard_B2ats_v2` |
+| Régions autorisées | `rg-stNN-lyon` | `francecentral` |
+| Tailles de VM autorisées | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6` |
 
 Conventions de nommage des affectations :
 - `pa-stNN-loc-<suffixe>` (ex. `pa-st07-loc-hub`)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # lyon-vm.sh — serveur de fichiers du site de Lyon simulé (module 5, réutilisé au module 6)
-#   vm-stNN-lyon-fs   Windows Server 2022   rg-stNN-lyon (West Europe)
+#   vm-stNN-lyon-fs   Windows Server 2022 Gen2   rg-stNN-lyon (France Central)
 #   carte nic-stNN-lyon-fs dans vnet-lyon/snet-stNN (groupe rg-formation-lyon), IP 10.200.NN.10
 # Prérequis (formatrice) : sous-réseau snet-stNN créé et rôle Contributeur de réseau
 # attribué au stagiaire sur ce sous-réseau (scripts/labs/module-05/lyon-site.sh prepare).
@@ -16,9 +16,12 @@ OCT=$((10#$NN))
 ST="st${NN}"
 RG="rg-${ST}-lyon"
 RG_LYON="${RG_LYON:-rg-formation-lyon}"
-LOC="westeurope"
-SIZE="${VM_SIZE:-Standard_B2s_v2}"
-IMAGE="${VM_IMAGE:-Win2022Datacenter}"
+LOC="francecentral"
+if   [[ -n "${VM_SIZE:-}" ]]; then SIZE="$VM_SIZE"
+elif (( 10#$NN <= 5 ));        then SIZE="Standard_D2as_v6"
+else                                SIZE="Standard_D2s_v6"
+fi
+IMAGE="${VM_IMAGE:-MicrosoftWindowsServer:WindowsServer:2022-datacenter-g2:latest}"
 NIC="nic-${ST}-lyon-fs"
 VM="vm-${ST}-lyon-fs"          # 15 caractères : limite du nom d'ordinateur Windows
 IP="10.200.${OCT}.10"

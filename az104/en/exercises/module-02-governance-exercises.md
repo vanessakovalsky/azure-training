@@ -49,7 +49,7 @@ Expected result: `Trainee: st07 · Subscription: 1a2b3c4d-…` (identifier speci
    rg-st07-spoke   francecentral
    rg-st07-data    francecentral
    rg-st07-app     francecentral
-   rg-st07-lyon    westeurope
+   rg-st07-lyon    francecentral
    ```
 
 2. Tag `rg-stNN-hub` from the portal.
@@ -134,15 +134,15 @@ Expected result: `Trainee: st07 · Subscription: 1a2b3c4d-…` (identifier speci
 
 ## Exercise 02.2 ⭐⭐ — Region and VM size guardrails (semi-autonomous)
 **Duration**: 25 min · **Objective**: 2 (apply an Azure Policy denying a non-compliant resource)
-**Context**: Arvéo's CISO requires data residency in France. Only the simulated Lyon site (`rg-stNN-lyon`) stays in West Europe. To control the budget, only the B-series VM sizes approved by IT are allowed.
+**Context**: Arvéo's CISO requires data residency in France. The simulated Lyon site (`rg-stNN-lyon`) is in France Central. To control the budget, only the B-series VM sizes approved by IT are allowed.
 
 **Task**: obtain the following guardrails, using built-in policies only.
 
 | Requirement | Scope | Parameter |
 |---|---|---|
 | Allowed regions | `rg-stNN-shared`, `-hub`, `-spoke`, `-data`, `-app` | `francecentral` |
-| Allowed regions | `rg-stNN-lyon` | `westeurope` |
-| Allowed VM sizes | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_B2als_v2`, `Standard_B2ats_v2` |
+| Allowed regions | `rg-stNN-lyon` | `francecentral` |
+| Allowed VM sizes | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6` |
 
 Assignment naming conventions:
 - `pa-stNN-loc-<suffix>` (e.g. `pa-st07-loc-hub`)

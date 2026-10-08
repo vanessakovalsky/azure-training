@@ -114,7 +114,7 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
    rg-st07-app     francecentral
    rg-st07-data    francecentral
    rg-st07-hub     francecentral
-   rg-st07-lyon    westeurope
+   rg-st07-lyon    francecentral
    rg-st07-shared  francecentral
    rg-st07-spoke   francecentral
    ```

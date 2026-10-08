@@ -26,7 +26,7 @@ DEF_LOC=$(az policy definition list \
 DEF_SKU=$(az policy definition list \
   --query "[?displayName=='Allowed virtual machine size SKUs'].name" --output tsv)
 for R in $SUFFIXES; do
-  REGION=francecentral; [ "$R" = "lyon" ] && REGION=westeurope
+  REGION=francecentral
   az policy assignment create --name "pa-${ST}-loc-${R}" \
     --display-name "Arveo ${ST} - Regions autorisees (${R})" \
     --policy "$DEF_LOC" --resource-group "rg-${ST}-${R}" \
@@ -36,7 +36,7 @@ for R in app lyon; do
   az policy assignment create --name "pa-${ST}-vmsku-${R}" \
     --display-name "Arveo ${ST} - Tailles de VM autorisees (${R})" \
     --policy "$DEF_SKU" --resource-group "rg-${ST}-${R}" \
-    --params '{"listOfAllowedSKUs":{"value":["Standard_B2s_v2","Standard_B2als_v2","Standard_B2ats_v2"]}}' \
+    --params '{"listOfAllowedSKUs":{"value":["Standard_B2s_v2","Standard_F1als_v7","Standard_F1alds_v7","Standard_D2as_v6","Standard_D2s_v6"]}}' \
     --output none
 done
 

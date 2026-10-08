@@ -11,8 +11,10 @@ param firewallPrivateIp string
 @description('Clé publique SSH des VMs de test (accès par run-command uniquement)')
 param sshPublicKey string
 
-param vmSize string = 'Standard_B2s_v2'
+param vmSizeOverride string = ''
 param adminUsername string = 'arveoadmin'
+
+var vmSize = !empty(vmSizeOverride) ? vmSizeOverride : (int(numero) <= 5 ? 'Standard_F1als_v7' : 'Standard_F1alds_v7')
 
 @description('false si les VMs de test existent déjà (création seule : clé SSH et customData non modifiables)')
 param deployTestVms bool = true

@@ -13,7 +13,10 @@ OCT=$((10#$NN))
 ST="st${NN}"
 RG="rg-${ST}-spoke"
 LOC="francecentral"
-SIZE="${VM_SIZE:-Standard_B2s_v2}"
+if   [[ -n "${VM_SIZE:-}" ]]; then SIZE="$VM_SIZE"
+elif (( 10#$NN <= 5 ));        then SIZE="Standard_F1als_v7"
+else                                SIZE="Standard_F1alds_v7"
+fi
 DIR="$(cd "$(dirname "$0")" && pwd)"
 TAGS=(Projet=Arveo Environnement=Formation "Proprietaire=${ST}")
 
