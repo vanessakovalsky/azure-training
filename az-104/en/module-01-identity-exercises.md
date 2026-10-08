@@ -172,6 +172,7 @@ Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
     Type = if ($_.groupTypes -contains 'DynamicMembership') { 'Dynamique' } else { 'Affecté' }
     Regle = $_.membershipRule } } |
   Format-Table -AutoSize``
+```
 - [ ] `st<NN>-GRP-IT` contains exactly Karim Haddad and Thomas Roux
 - [ ] `st<NN>-GRP-Logistique` contains exactly Léa Martin, Hugo Bernard, Sofia Moreau, Yanis Lefebvre (processing delay possible)
 - [ ] No other trainee's user in `st<NN>-GRP-Logistique`
