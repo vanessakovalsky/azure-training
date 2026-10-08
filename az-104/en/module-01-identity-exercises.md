@@ -12,7 +12,8 @@ Connect-MgGraph -Scopes "User.ReadWrite.All","Group.ReadWrite.All","Administrati
 $au = Get-MgDirectoryAdministrativeUnit -Filter "displayName eq 'AU-st$NN'"
 $au.DisplayName
 ```
-Expected result: `AU-st07` (with your number).
+
+Expected result: `2 groups`
 
 ---
 
