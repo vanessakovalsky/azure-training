@@ -25,7 +25,7 @@ set -euo pipefail
 ACTION="${1:?Action requise : prepare, connect, status ou cleanup}"
 shift || true
 RG_LYON="${RG_LYON:-rg-formation-lyon}"
-LOC="westeurope"
+LOC="francecentral"
 PSK_FILE="$HOME/.arveo/psk-lyon.txt"
 TAGS=(Projet=Arveo Environnement=Formation Proprietaire=formatrice)
 
