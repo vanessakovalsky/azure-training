@@ -163,7 +163,7 @@ Invoke-MgGraphRequest -Method POST -Uri "v1.0/groups" -Body @{
 - Documentation: https://learn.microsoft.com/graph/api/administrativeunit-post-members and https://learn.microsoft.com/entra/identity/users/groups-dynamic-membership
 
 **Success criteria** :
-- [ ] `Get-MgDirectoryAdministrativeUnitMember` lists 9 users and 2 groups
+- [ ]  lists 9 users with lab 1.1 step3 command and 2 groups with command : ```Get-MgGroup -Filter "startswith(displayName, 'st$NN')"
 - [ ] `st<NN>-GRP-IT` contains exactly Karim Haddad and Thomas Roux
 - [ ] `st<NN>-GRP-Logistique` contains exactly Léa Martin, Hugo Bernard, Sofia Moreau, Yanis Lefebvre (processing delay possible)
 - [ ] No other trainee's user in `st<NN>-GRP-Logistique`
