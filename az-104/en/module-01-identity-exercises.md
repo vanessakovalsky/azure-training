@@ -111,10 +111,27 @@ camille,fontaine,Finance,Accountant
 ```
 
 **Task** :
-1. Create the 6 users in `AU-st<NN>` by script: UPN `st<NN>-firstname.lastname@<DOMAIN>`, capitalized display name (`Hugo Bernard`), `department`, `jobTitle`, `companyName = Arveo-st<NN>`, `usageLocation = FR`, password `<PWD>` to be changed at first sign-in.
-2. Create in `AU-st<NN>` the assigned security group `st<NN>-GRP-IT` and add Karim Haddad and Thomas Roux.
-3. Create in `AU-st<NN>` the dynamic security group `st<NN>-GRP-Logistique` whose rule keeps only users of the Logistique department of YOUR entity.
-4. Check the members of both groups.
+1. Create the 6 users in `AU-st<NN>` by script:
+```powershell
+$PWD_LAB = "Arv-Import-2026!"
+$tc = (Get-Culture).TextInfo
+Import-Csv ./arveo-users.csv | ForEach-Object {
+  $nick = "st$NN-$($_.FirstName).$($_.LastName)"
+  Invoke-MgGraphRequest -Method POST -Uri "v1.0/users" -Body @{
+    accountEnabled=$true
+    displayName="$($tc.ToTitleCase($_.FirstName)) $($tc.ToTitleCase($_.LastName))"
+    givenName=$tc.ToTitleCase($_.FirstName); surname=$tc.ToTitleCase($_.LastName)
+    mailNickname=$nick; userPrincipalName="$nick@$Domain"
+    department=$_.Department; jobTitle=$_.JobTitle
+    companyName="Arveo-st$NN"; usageLocation="FR"
+    passwordProfile=@{ password=$PWD_LAB; forceChangePasswordNextSignIn=$true }
+  } | Out-Null
+  Write-Host "+ $nick"
+}
+```
+3. Create in `AU-st<NN>` the assigned security group `st<NN>-GRP-IT` and add Karim Haddad and Thomas Roux.
+4. Create in `AU-st<NN>` the dynamic security group `st<NN>-GRP-Logistique` whose rule keeps only users of the Logistique department of YOUR entity.
+5. Check the members of both groups.
 
 **Hints** :
 - Same method as the "Create a user inside your AU" slide, inside an `Import-Csv | ForEach-Object` loop.
