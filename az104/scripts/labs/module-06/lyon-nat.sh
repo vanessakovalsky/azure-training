@@ -5,7 +5,7 @@
 # en HTTPS 443) ; au module 9, l'agent MARS. L'accès sortant implicite des VMs est en cours
 # de retrait [À VÉRIFIER] statut des sous-réseaux de vnet-lyon : une passerelle NAT partagée
 # rend l'accès sortant explicite et identique pour tous.
-#   natgw-lyon + pip-lyon-natgw (West Europe), associée à tous les sous-réseaux snet-stNN
+#   natgw-lyon + pip-lyon-natgw (France Central), associée à tous les sous-réseaux snet-stNN
 #
 # Usage :
 #   ./lyon-nat.sh create     J3 08:30 : passerelle NAT créée et associée (idempotent)
@@ -15,7 +15,7 @@ set -euo pipefail
 
 ACTION="${1:?Action requise : create, status ou cleanup}"
 RG_LYON="${RG_LYON:-rg-formation-lyon}"
-LOC="westeurope"
+LOC="francecentral"
 NAT="natgw-lyon"
 PIP="pip-lyon-natgw"
 TAGS=(Projet=Arveo Environnement=Formation Proprietaire=formatrice)

@@ -7,7 +7,7 @@ targetScope = 'resourceGroup'
 param numero string
 
 @description('Région de déploiement')
-@allowed([ 'francecentral', 'westeurope' ])
+@allowed([ 'francecentral' ])
 param location string = 'francecentral'
 
 @description('Nom du compte de stockage de diagnostic (3 à 24 minuscules ou chiffres)')

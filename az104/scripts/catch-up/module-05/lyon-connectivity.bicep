@@ -12,7 +12,7 @@ targetScope = 'resourceGroup'
 param numero string
 
 @description('Région du hub')
-@allowed([ 'francecentral', 'westeurope' ])
+@allowed([ 'francecentral' ])
 param location string = 'francecentral'
 
 var prefix = 'st${numero}'

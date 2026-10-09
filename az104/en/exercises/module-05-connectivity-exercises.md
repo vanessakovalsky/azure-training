@@ -1,11 +1,11 @@
 # Module 05 — Exercises
 
-Common thread: **connecting the Arvéo network to the Lyon site**. The hub becomes the single entry point: its VPN gateway is shared with the spokes (transit), an IPsec tunnel links it to the Lyon datacenter, and every Lyon ↔ spoke flow crosses the firewall. A disaster recovery (DR) spoke is prepared in West Europe. The Lyon file server created here is reused in module 6 (Azure File Sync).
+Common thread: **connecting the Arvéo network to the Lyon site**. The hub becomes the single entry point: its VPN gateway is shared with the spokes (transit), an IPsec tunnel links it to the Lyon datacenter, and every Lyon ↔ spoke flow crosses the firewall. A disaster recovery (DR) spoke is prepared in North Europe. The Lyon file server created here is reused in module 6 (Azure File Sync).
 
 | Resource | Name (trainee 07) | Group | Lab |
 |---|---|---|---|
 | Gateway transit | options of links `peer-hub-to-spoke-*`, `peer-spoke-*-to-hub` | hub / spoke | 05.1 |
-| DR spoke (West Europe) | `vnet-st07-spoke-pra`, links `peer-hub-to-spoke-pra`, `peer-spoke-pra-to-hub` | `rg-st07-spoke` / `rg-st07-hub` | 05.1 |
+| DR spoke (North Europe) | `vnet-st07-spoke-pra`, links `peer-hub-to-spoke-pra`, `peer-spoke-pra-to-hub` | `rg-st07-spoke` / `rg-st07-hub` | 05.1 |
 | Lyon server | `vm-st07-lyon-fs` (`10.200.7.10`), NIC `nic-st07-lyon-fs` | `rg-st07-lyon` | 05.2 (script) |
 | Local network gateway and connection | `lng-st07-lyon`, `cn-st07-hub-to-lyon` | `rg-st07-hub` | 05.2 |
 | Hybrid routing and filtering | `rt-st07-gateway`, group `rcg-lyon`, rule `Allow-SQL-From-Lyon` | hub / spoke | 05.3 |
@@ -54,13 +54,13 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 
 ## Lab 05.1 ⭐⭐ — Gateway transit and global peering (semi-autonomous)
 **Duration** : 40 min · **Objective** : configure gateway transit and a global peering, then check their state (objective 6)
-**Context** : Arvéo will pay for a single VPN gateway, the hub one; the spokes must use it to reach Lyon. IT is also preparing a disaster recovery plan in West Europe: a DR spoke, empty for now, must be connected to the France Central hub and benefit from the same access to Lyon. A second address range will be added to it during the project.
+**Context** : Arvéo will pay for a single VPN gateway, the hub one; the spokes must use it to reach Lyon. IT is also preparing a disaster recovery plan in North Europe: a DR spoke, empty for now, must be connected to the France Central hub and benefit from the same access to Lyon. A second address range will be added to it during the project.
 **Prerequisites** : module 4 completed (or catch-up), variable block run.
 
 **Assignment** :
 1. Check that `vpngw-st<NN>-hub` is `Succeeded`, then list the hub peering links with their state and their four options.
 2. Enable gateway transit on the existing links: `allowGatewayTransit` on `peer-hub-to-spoke-app` and `peer-hub-to-spoke-data`, then `useRemoteGateways` on `peer-spoke-app-to-hub` and `peer-spoke-data-to-hub`.
-3. Create `vnet-st<NN>-spoke-pra` in `rg-st<NN>-spoke`, region **West Europe**, range `10.<OCT>.12.0/23`, subnet `snet-pra` (`10.<OCT>.12.0/24`), mandatory tags.
+3. Create `vnet-st<NN>-spoke-pra` in `rg-st<NN>-spoke`, region **North Europe**, range `10.<OCT>.12.0/23`, subnet `snet-pra` (`10.<OCT>.12.0/24`), mandatory tags.
 4. Create the hub ↔ DR global peering: `peer-hub-to-spoke-pra` (access, forwarded traffic, gateway transit), then `peer-spoke-pra-to-hub` (access, forwarded traffic, remote gateway).
 5. Display, for the three hub links: name, state, sync level, gateway transit; for the three spoke links: name and `useRemoteGateways`.
 6. Add range `10.<OCT>.14.0/23` to the DR spoke. Note the sync level of the hub links, synchronize the relevant link, then check.
@@ -81,7 +81,7 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 **Success criteria** :
 - [ ] `az network vnet peering list -g rg-st<NN>-hub --vnet-name vnet-st<NN>-hub --query "[].[name, peeringState, peeringSyncLevel, allowGatewayTransit]" -o tsv` shows three links `Connected`, `FullyInSync`, `True`.
 - [ ] The three `peer-spoke-*-to-hub` links have `useRemoteGateways` set to `true`.
-- [ ] `az network vnet show -g rg-st<NN>-spoke -n vnet-st<NN>-spoke-pra --query "[location, addressSpace.addressPrefixes]" -o tsv` shows `westeurope` and both ranges.
+- [ ] `az network vnet show -g rg-st<NN>-spoke -n vnet-st<NN>-spoke-pra --query "[location, addressSpace.addressPrefixes]" -o tsv` shows `northeurope` and both ranges.
 - [ ] The three answers of step 8 are written.
 
 ---

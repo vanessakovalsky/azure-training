@@ -42,7 +42,7 @@ if az network firewall show -g "$HUB" -n "afw-${ST}-hub" -o none 2>/dev/null \
 else
   echo "   pare-feu absent : rattrapage du module 4 (10 à 20 min)"
   set_remote_gateways false   # le rattrapage M4 redéclare les liens du hub sans transit
-  "${DIR}/../module-04/deploy.sh" "$NN"
+  "${DIR}/../../m4/catch-up/module-04/deploy.sh" "$NN"
 fi
 
 echo "== Étape 2/5 : passerelle vpngw-${ST}-hub"
@@ -51,7 +51,7 @@ for _ in $(seq 1 100); do
     --query provisioningState -o tsv 2>/dev/null || echo "Absente")
   [[ "$STATE" == "Succeeded" ]] && break
   [[ "$STATE" == "Failed" || "$STATE" == "Absente" ]] && {
-    echo "   passerelle ${STATE} : relancer scripts/prereq-vpn-gateways.sh ${NN}" >&2; exit 1; }
+    echo "   passerelle ${STATE} : relancer scripts/m5/prereq-vpn-gateways.sh ${NN}" >&2; exit 1; }
   echo "   ${STATE}... nouvelle vérification dans 30 s"
   sleep 30
 done

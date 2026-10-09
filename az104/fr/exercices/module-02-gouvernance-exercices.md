@@ -138,7 +138,8 @@ Résultat attendu : `Stagiaire : st07 · Abonnement : 1a2b3c4d-…` (identifiant
 
 | Exigence | Scope | Paramètre |
 |---|---|---|
-| Régions autorisées | `rg-stNN-shared`, `-hub`, `-spoke`, `-data`, `-app` | `francecentral` |
+| Régions autorisées | `rg-stNN-shared`, `-hub`, `-data`, `-app` | `francecentral` |
+| Régions autorisées | `rg-stNN-spoke` | `francecentral`, `northeurope` |
 | Régions autorisées | `rg-stNN-lyon` | `francecentral` |
 | Tailles de VM autorisées | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6` |
 
@@ -170,7 +171,7 @@ Preuves attendues :
   ```
 - [ ] Message `RequestDisallowedByPolicy` lors de la création en West Europe
 - [ ] NSG de test en France Central créé puis supprimé (aucun `nsg-stNN-test` restant)
-- [ ] Explication : pourquoi un réseau virtuel dans `rg-stNN-lyon` en West Europe reste autorisé
+- [ ] Explication : pourquoi un réseau virtuel dans `rg-stNN-spoke` en North Europe (spoke PRA) sera autorisé
 
 ---
 

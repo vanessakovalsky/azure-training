@@ -26,11 +26,16 @@ DEF_LOC=$(az policy definition list \
 DEF_SKU=$(az policy definition list \
   --query "[?displayName=='Allowed virtual machine size SKUs'].name" --output tsv)
 for R in $SUFFIXES; do
-  REGION=francecentral
+  # Le spoke héberge vnet-stNN-spoke-pra (North Europe) → deux régions autorisées
+  if [ "$R" = "spoke" ]; then
+    LOCS='["francecentral","northeurope"]'
+  else
+    LOCS='["francecentral"]'
+  fi
   az policy assignment create --name "pa-${ST}-loc-${R}" \
     --display-name "Arveo ${ST} - Regions autorisees (${R})" \
     --policy "$DEF_LOC" --resource-group "rg-${ST}-${R}" \
-    --params "{\"listOfAllowedLocations\":{\"value\":[\"${REGION}\"]}}" --output none
+    --params "{\"listOfAllowedLocations\":{\"value\":${LOCS}}}" --output none
 done
 for R in app lyon; do
   az policy assignment create --name "pa-${ST}-vmsku-${R}" \

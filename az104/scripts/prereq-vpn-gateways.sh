@@ -6,7 +6,7 @@
 #   ./prereq-vpn-gateways.sh <NN>    stagiaire : hub vnet-stNN-hub (tous les sous-réseaux du hub)
 #                                    + passerelle vpngw-stNN-hub (rg-stNN-hub, France Central)
 #   ./prereq-vpn-gateways.sh lyon    formatrice : vnet-lyon + passerelle vpngw-lyon partagée
-#                                    (West Europe, groupe $RG_LYON, défaut rg-formation-lyon)
+#                                    (France Central, groupe $RG_LYON, défaut rg-formation-lyon)
 #
 # Idempotent : chaque objet existant est conservé tel quel (aucun PUT sur un VNet existant,
 # qui supprimerait les sous-réseaux absents de la commande).
@@ -14,9 +14,11 @@ set -euo pipefail
 
 MODE="${1:?Argument requis : numéro de stagiaire sur deux chiffres (ex. 07) ou lyon}"
 
+GW_SKU="${GW_SKU:-VpnGw1AZ}"
+
 if [[ "$MODE" == "lyon" ]]; then
   RG="${RG_LYON:-rg-formation-lyon}"
-  LOC="westeurope"
+  LOC="francecentral"
   OWNER="formatrice"
   VNET="vnet-lyon"
   VNET_PREFIX="10.200.0.0/16"
@@ -73,23 +75,28 @@ for entry in "${EXTRA_SUBNETS[@]}"; do
   fi
 done
 
-echo "== IP publique ${PIP} (Standard, zones 1 2 3)"
+if [[ "$GW_SKU" == *AZ ]]; then
+  ZONE_ARGS=(--zone 1 2 3)
+else
+  ZONE_ARGS=()
+fi
+echo "== IP publique ${PIP} (Standard${GW_SKU/*AZ*/,\ zones\ 1\ 2\ 3})"
 if az network public-ip show -g "$RG" -n "$PIP" -o none 2>/dev/null; then
   echo "   déjà présente : conservée"
 else
   az network public-ip create -g "$RG" -n "$PIP" -l "$LOC" \
-    --sku Standard --allocation-method Static --zone 1 2 3 \
+    --sku Standard --allocation-method Static "${ZONE_ARGS[@]}" \
     --tags "${TAGS[@]}" -o none
 fi
 
-echo "== Passerelle ${GW} (VpnGw1AZ, route-based)"
+echo "== Passerelle ${GW} (${GW_SKU}, route-based)"
 if az network vnet-gateway show -g "$RG" -n "$GW" -o none 2>/dev/null; then
   echo "   déjà présente : état $(az network vnet-gateway show -g "$RG" -n "$GW" \
     --query provisioningState -o tsv)"
 else
   az network vnet-gateway create -g "$RG" -n "$GW" -l "$LOC" \
     --vnet "$VNET" --public-ip-addresses "$PIP" \
-    --gateway-type Vpn --vpn-type RouteBased --sku VpnGw1AZ \
+    --gateway-type Vpn --vpn-type RouteBased --sku "$GW_SKU" \
     --tags "${TAGS[@]}" --no-wait
   echo "   déploiement lancé en arrière-plan (30 à 45 min)"
 fi

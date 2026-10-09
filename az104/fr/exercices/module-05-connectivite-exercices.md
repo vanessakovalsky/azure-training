@@ -1,11 +1,11 @@
 # Module 05 — Exercices
 
-Fil rouge : **liaison du réseau Arvéo avec le site de Lyon**. Le hub reçoit le rôle de point d'entrée unique : sa passerelle VPN est partagée avec les spokes (transit), un tunnel IPsec le relie au datacenter de Lyon, et tout flux Lyon ↔ spokes traverse le pare-feu. Un spoke de reprise d'activité (PRA) est préparé en West Europe. Le serveur de fichiers de Lyon créé ici est repris au module 6 (Azure File Sync).
+Fil rouge : **liaison du réseau Arvéo avec le site de Lyon**. Le hub reçoit le rôle de point d'entrée unique : sa passerelle VPN est partagée avec les spokes (transit), un tunnel IPsec le relie au datacenter de Lyon, et tout flux Lyon ↔ spokes traverse le pare-feu. Un spoke de reprise d'activité (PRA) est préparé en North Europe. Le serveur de fichiers de Lyon créé ici est repris au module 6 (Azure File Sync).
 
 | Ressource | Nom (stagiaire 07) | Groupe | Lab |
 |---|---|---|---|
 | Transit de passerelle | options des liens `peer-hub-to-spoke-*`, `peer-spoke-*-to-hub` | hub / spoke | 05.1 |
-| Spoke PRA (West Europe) | `vnet-st07-spoke-pra`, liens `peer-hub-to-spoke-pra`, `peer-spoke-pra-to-hub` | `rg-st07-spoke` / `rg-st07-hub` | 05.1 |
+| Spoke PRA (North Europe) | `vnet-st07-spoke-pra`, liens `peer-hub-to-spoke-pra`, `peer-spoke-pra-to-hub` | `rg-st07-spoke` / `rg-st07-hub` | 05.1 |
 | Serveur de Lyon | `vm-st07-lyon-fs` (`10.200.7.10`), carte `nic-st07-lyon-fs` | `rg-st07-lyon` | 05.2 (script) |
 | Passerelle locale et connexion | `lng-st07-lyon`, `cn-st07-hub-to-lyon` | `rg-st07-hub` | 05.2 |
 | Routage et filtrage hybrides | `rt-st07-gateway`, groupe `rcg-lyon`, règle `Allow-SQL-From-Lyon` | hub / spoke | 05.3 |
@@ -54,13 +54,13 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 
 ## Lab 05.1 ⭐⭐ — Transit de passerelle et peering global (semi-autonome)
 **Durée** : 40 min · **Objectif** : configurer le transit de passerelle et un peering global, puis vérifier leur état (objectif 6)
-**Contexte** : Arvéo ne paiera qu'une passerelle VPN, celle du hub ; les spokes doivent l'utiliser pour joindre Lyon. La DSI prépare aussi un plan de reprise d'activité en West Europe : un spoke PRA, vide pour l'instant, doit être relié au hub de France Central et profiter du même accès à Lyon. Une seconde plage d'adresses lui sera ajoutée en cours de projet.
+**Contexte** : Arvéo ne paiera qu'une passerelle VPN, celle du hub ; les spokes doivent l'utiliser pour joindre Lyon. La DSI prépare aussi un plan de reprise d'activité en North Europe : un spoke PRA, vide pour l'instant, doit être relié au hub de France Central et profiter du même accès à Lyon. Une seconde plage d'adresses lui sera ajoutée en cours de projet.
 **Prérequis** : module 4 terminé (ou rattrapage), bloc de variables exécuté.
 
 **Énoncé** :
 1. Vérifier que `vpngw-st<NN>-hub` est en `Succeeded`, puis lister les liens de peering du hub avec leur état et leurs quatre options.
 2. Activer le transit de passerelle sur les liens existants : `allowGatewayTransit` sur `peer-hub-to-spoke-app` et `peer-hub-to-spoke-data`, puis `useRemoteGateways` sur `peer-spoke-app-to-hub` et `peer-spoke-data-to-hub`.
-3. Créer `vnet-st<NN>-spoke-pra` dans `rg-st<NN>-spoke`, région **West Europe**, plage `10.<OCT>.12.0/23`, sous-réseau `snet-pra` (`10.<OCT>.12.0/24`), tags obligatoires.
+3. Créer `vnet-st<NN>-spoke-pra` dans `rg-st<NN>-spoke`, région **North Europe**, plage `10.<OCT>.12.0/23`, sous-réseau `snet-pra` (`10.<OCT>.12.0/24`), tags obligatoires.
 4. Créer le peering global hub ↔ PRA : `peer-hub-to-spoke-pra` (accès, trafic relayé, transit de passerelle) puis `peer-spoke-pra-to-hub` (accès, trafic relayé, passerelle distante).
 5. Afficher, pour les trois liens du hub : nom, état, niveau de synchronisation, transit de passerelle ; pour les trois liens des spokes : nom et `useRemoteGateways`.
 6. Ajouter la plage `10.<OCT>.14.0/23` au spoke PRA. Relever le niveau de synchronisation des liens du hub, synchroniser le lien concerné, puis vérifier.
@@ -81,7 +81,7 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 **Critères de réussite** :
 - [ ] `az network vnet peering list -g rg-st<NN>-hub --vnet-name vnet-st<NN>-hub --query "[].[name, peeringState, peeringSyncLevel, allowGatewayTransit]" -o tsv` affiche trois liens `Connected`, `FullyInSync`, `True`.
 - [ ] Les trois liens `peer-spoke-*-to-hub` ont `useRemoteGateways` à `true`.
-- [ ] `az network vnet show -g rg-st<NN>-spoke -n vnet-st<NN>-spoke-pra --query "[location, addressSpace.addressPrefixes]" -o tsv` affiche `westeurope` et les deux plages.
+- [ ] `az network vnet show -g rg-st<NN>-spoke -n vnet-st<NN>-spoke-pra --query "[location, addressSpace.addressPrefixes]" -o tsv` affiche `northeurope` et les deux plages.
 - [ ] Les trois réponses de l'étape 8 sont rédigées.
 
 ---
@@ -119,7 +119,7 @@ st07 7 rg-st07-hub rg-st07-spoke rg-st07-lyon
 - État : propriétés `connectionStatus`, `ingressBytesTransferred`, `egressBytesTransferred` de `az network vpn-connection show`.
 - Routes effectives : `az network nic show-effective-route-table` (VM démarrée).
 - Test depuis Lyon : `lyon "try { (Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 http://<IP>).Content.Trim() } catch { 'ECHEC' }"` (30 à 60 s).
-- Saut suivant d'une VM de West Europe : Network Watcher de West Europe, même commande `show-next-hop`.
+- Saut suivant du serveur de Lyon : Network Watcher de France Central, même commande `show-next-hop`.
 - Étape 9 : routes de `GatewaySubnet` (aucune UDR à ce stade) et route `0.0.0.0/0` de `snet-web` (module 4).
 
 **Critères de réussite** :

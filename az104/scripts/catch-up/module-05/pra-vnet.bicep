@@ -1,12 +1,12 @@
 // pra-vnet.bicep — module du rattrapage M5, déployé dans rg-stNN-spoke
-// Spoke de reprise d'activité en West Europe (peering global avec le hub de France Central).
+// Spoke de reprise d'activité en North Europe (peering global avec le hub de France Central).
 // État de fin de module : deux plages (lab 05.1, étape d'extension de l'espace d'adressage).
 targetScope = 'resourceGroup'
 
 param numero string
 
-@allowed([ 'westeurope' ])
-param location string = 'westeurope'
+@allowed([ 'northeurope' ])
+param location string = 'northeurope'
 
 var prefix = 'st${numero}'
 var octet = int(numero)

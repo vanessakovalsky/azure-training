@@ -10,7 +10,7 @@ targetScope = 'resourceGroup'
 param numero string
 
 @description('Région de déploiement')
-@allowed([ 'francecentral', 'westeurope' ])
+@allowed([ 'francecentral' ])
 param location string = 'francecentral'
 
 @description('Clé publique SSH des VMs de test')

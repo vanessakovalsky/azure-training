@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # lyon-site.sh — côté « site de Lyon » du module 5 (FORMATRICE uniquement)
-# Le site de Lyon simulé est partagé : vnet-lyon (10.200.0.0/16, West Europe) et sa passerelle
+# Le site de Lyon simulé est partagé : vnet-lyon (10.200.0.0/16, France Central) et sa passerelle
 # vpngw-lyon dans le groupe $RG_LYON (défaut rg-formation-lyon). Les stagiaires n'y ont que
 # la lecture, plus le rôle Contributeur de réseau sur LEUR sous-réseau snet-stNN.
 #
@@ -57,6 +57,10 @@ psk_for() {   # psk_for <NN> : clé commune ($PSK) ou clé propre au stagiaire, 
 case "$ACTION" in
   prepare)
     : "${DOMAINE:?Variable DOMAINE requise (ex. arveoformation.onmicrosoft.com)}"
+    if ! az group show -n "$RG_LYON" -o none 2>/dev/null; then
+      az group create -n "$RG_LYON" -l "$LOC" --tags "${TAGS[@]}" -o none
+      echo "Groupe ${RG_LYON} créé (${LOC})"
+    fi
     if ! az network vnet show -g "$RG_LYON" -n vnet-lyon -o none 2>/dev/null; then
       az network vnet create -g "$RG_LYON" -n vnet-lyon -l "$LOC" \
         --address-prefixes 10.200.0.0/16 \
@@ -99,7 +103,7 @@ case "$ACTION" in
       if az network vpn-connection show -g "$RG_LYON" -n "cn-lyon-to-${ST}" -o none 2>/dev/null; then
         echo "${ST} : connexion cn-lyon-to-${ST} déjà présente"
       else
-        az network vpn-connection create -g "$RG_LYON" -n "cn-lyon-to-${ST}" \
+        az network vpn-connection create -g "$RG_LYON" -n "cn-lyon-to-${ST}" -l "$LOC" \
           --vnet-gateway1 vpngw-lyon --local-gateway2 "lng-lyon-${ST}" \
           --shared-key "$(psk_for "$NN")" --tags "${TAGS[@]}" -o none
         echo "${ST} : lng-lyon-${ST} (${PIP}, 10.${OCT}.0.0/20) + cn-lyon-to-${ST} créées"
