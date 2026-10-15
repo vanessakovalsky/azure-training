@@ -25,15 +25,15 @@ PP_FILE="${HOME}/.arveo/mars-passphrase.txt"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 state() {
-  az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+  az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
     --query instanceView.executionState -o tsv 2>/dev/null || echo "Absente"
 }
 
 if [[ "$MODE" == "--status" ]]; then
-  az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+  az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
     --query "instanceView.{Etat:executionState, Debut:startTime, Fin:endTime}" -o table 2>/dev/null \
     || { echo "Commande ${RC} absente : lancer ./mars-lyon.sh ${NN}"; exit 0; }
-  az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+  az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
     --query "[instanceView.output, instanceView.error]" -o tsv 2>/dev/null || true
   exit 0
 fi
@@ -64,8 +64,8 @@ STATE=$(state)
 if [[ "$STATE" == "Succeeded" || "$STATE" == "Running" ]]; then
   echo "   ${RC} déjà ${STATE} : conservée"
 else
-  [[ "$STATE" == "Absente" ]] || az vm run-command delete -g "$RG" --vm-name "$VM" -n "$RC" --yes -o none
-  az vm run-command create -g "$RG" --vm-name "$VM" -n "$RC" -l "$LOC" \
+  [[ "$STATE" == "Absente" ]] || az vm run-command delete -g "$RG" --vm-name "$VM" --run-command-name "$RC" --yes -o none
+  az vm run-command create -g "$RG" --vm-name "$VM" --run-command-name "$RC" -l "$LOC" \
     --script @"${DIR}/mars-install.ps1" \
     --parameters "SubscriptionId=$(az account show --query id -o tsv)" \
                  "ResourceGroup=${RG_SHARED}" "VaultName=${VAULT}" \

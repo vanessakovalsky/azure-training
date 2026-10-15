@@ -24,14 +24,14 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 TAGS=(Projet=Arveo Environnement=Formation "Proprietaire=${ST}")
 
 status() {   # état de la commande d'exécution managée
-  az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+  az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
     --query "instanceView.{Etat:executionState, Debut:startTime, Fin:endTime}" -o table 2>/dev/null \
     || echo "Commande ${RC} absente : lancer ./lyon-fs-prep.sh ${NN}"
 }
 
 if [[ "$MODE" == "--status" ]]; then
   status
-  az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+  az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
     --query "instanceView.output" -o tsv 2>/dev/null || true
   exit 0
 fi
@@ -63,12 +63,12 @@ PRINCIPAL=$(az vm identity assign -g "$RG" -n "$VM" --query systemAssignedIdenti
 echo "   ID de principal : ${PRINCIPAL}"
 
 echo "== Préparation Windows (commande d'exécution managée ${RC})"
-STATE=$(az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+STATE=$(az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
   --query instanceView.executionState -o tsv 2>/dev/null || echo "Absente")
 if [[ "$STATE" == "Succeeded" || "$STATE" == "Running" ]]; then
   echo "   ${RC} déjà ${STATE} : conservée"
 else
-  az vm run-command create -g "$RG" --vm-name "$VM" -n "$RC" -l "$LOC" \
+  az vm run-command create -g "$RG" --vm-name "$VM" --run-command-name "$RC" -l "$LOC" \
     --script @"${DIR}/lyon-fs-prep.ps1" \
     --async-execution true --timeout-in-seconds 3600 -o none
   echo "   ${RC} lancée en arrière-plan (10 à 15 min)"
@@ -76,7 +76,7 @@ fi
 
 if [[ "$MODE" == "--wait" ]]; then
   for _ in $(seq 1 60); do
-    STATE=$(az vm run-command show -g "$RG" --vm-name "$VM" -n "$RC" --instance-view \
+    STATE=$(az vm run-command show -g "$RG" --vm-name "$VM" --run-command-name "$RC" --instance-view \
       --query instanceView.executionState -o tsv)
     [[ "$STATE" == "Succeeded" || "$STATE" == "Failed" || "$STATE" == "TimedOut" ]] && break
     sleep 30

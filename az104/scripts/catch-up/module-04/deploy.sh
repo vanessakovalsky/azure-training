@@ -3,6 +3,7 @@
 # 1. Hub et passerelle VPN : scripts/prereq-vpn-gateways.sh (idempotent)
 # 2. Pare-feu, règles, spokes, NSG/ASG, UDR, peerings, VMs de test, zones DNS : main.bicep
 # Durée : 10 à 20 min (pare-feu). La passerelle VPN poursuit son déploiement en arrière-plan.
+# Taille des VMs de test : VM_SIZE=<taille> ./deploy.sh <NN> (quota épuisé), sinon choix selon NN
 # Usage : ./deploy.sh <NN>
 set -euo pipefail
 
@@ -29,7 +30,7 @@ az deployment group create \
   --resource-group "rg-${ST}-hub" \
   --name "rattrapage-m04" \
   --template-file "${DIR}/main.bicep" \
-  --parameters numero="$NN" deployTestVms="$DEPLOY_VMS" \
+  --parameters numero="$NN" deployTestVms="$DEPLOY_VMS" vmSizeOverride="${VM_SIZE:-}" \
     sshPublicKey="$(cat "$HOME/.ssh/id_rsa.pub")" \
   --query "properties.outputs.{IP_privee_FW:firewallPrivateIp.value, IP_publique_FW:firewallPublicIp.value}" \
   -o table

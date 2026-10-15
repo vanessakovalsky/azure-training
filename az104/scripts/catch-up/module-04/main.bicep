@@ -19,6 +19,9 @@ param sshPublicKey string
 @description('false si les VMs de test existent déjà')
 param deployTestVms bool = true
 
+@description('Taille des VMs de test (vide = choix selon le numéro, voir spokes.bicep)')
+param vmSizeOverride string = ''
+
 var prefix = 'st${numero}'
 var octet = int(numero)
 var spokeRg = 'rg-${prefix}-spoke'
@@ -64,6 +67,7 @@ module spokes 'spokes.bicep' = {
     firewallPrivateIp: firewall.outputs.firewallPrivateIp
     sshPublicKey: sshPublicKey
     deployTestVms: deployTestVms
+    vmSizeOverride: vmSizeOverride
   }
 }
 
