@@ -290,7 +290,7 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
 ## Défi 03.5 ⭐⭐⭐ — Reprendre le socle sous IaC et corriger une dérive (autonome)
 **Durée** : 10 min · **Objectif** : déployer un fichier Bicep paramétré de façon reproductible après contrôle `what-if` (objectif 4)
 
-> 🔸 **Session ajustée** : remplacé par `./scripts/m3/deploy.sh <NN>` (déploie les trois ressources du socle en 1–2 min). À faire en autonomie si vous êtes en avance.
+> 🔸 **Session ajustée** : remplacé par `./scripts/deploy.sh <NN>` (déploie les trois ressources du socle en 1–2 min). À faire en autonomie si vous êtes en avance.
 **Contexte** : le socle `rg-stNN-shared` a été construit avec trois outils différents. La DSI d'Arvéo veut un fichier unique, source de vérité, capable de recréer le socle à l'identique et de corriger toute modification manuelle.
 
 **Énoncé** :

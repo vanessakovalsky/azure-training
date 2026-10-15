@@ -179,8 +179,10 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
 
 ---
 
-## Lab 09.2 ⭐⭐ — Backing up and restoring share `partage-lyon` (semi-autonomous)
+## Lab 09.2 ⭐⭐ 🔸 Optional — Backing up and restoring share `partage-lyon` (semi-autonomous)
 **Duration** : 10 min · **Objective** : back up an Azure Files share with the vault and restore a deleted file (objective 10)
+
+> 🔸 **Optional** — Creates: protection of `partage-lyon` in the vault. Demonstrated by the trainer; not reused later. Catch-up: `./scripts/catch-up/module-09/deploy.sh <NN> <SES>`
 **Context** : since module 6, `partage-lyon` is the reference copy of the Lyon file server; File Sync ALSO propagates deletions. Requirement: 24 h RPO, 30-day retention, restore of a file by the service desk in less than one hour, without depending on the Lyon server.
 **Prerequisites** : lab 09.1 completed; share synchronized (module 6).
 
@@ -224,8 +226,10 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
 
 ---
 
-## Lab 09.3 ⭐⭐ — MARS agent on the Lyon server (semi-autonomous)
+## Lab 09.3 ⭐⭐ 🔸 Optional — MARS agent on the Lyon server (semi-autonomous)
 **Duration** : 15 min · **Objective** : back up and restore a folder of an on-premises server with the MARS agent (objective 10)
+
+> 🔸 **Optional** — Creates: MARS agent and backup of `F:\Compta` on the Lyon server. Shown in the portal by the trainer; `mars-lyon.sh` is not run. No catch-up needed.
 **Context** : until Lyon closes (6 months), the old accounting application drops its exports every day into `F:\Compta` on the file server. This folder is NOT synchronized with Azure Files. The weekly LTO tape has been stopped: accounting requires a backup every weekday evening at 21:00, kept 30 days, with no inbound port or VPN to Lyon.
 **Prerequisites** : lab 09.1 step 6 launched (agent installed and registered); variable block run.
 
@@ -313,8 +317,10 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
 
 ---
 
-## Challenge 09.5 ⭐⭐⭐ — Rolling `web01` back after a failed update (autonomous)
+## Challenge 09.5 ⭐⭐⭐ 🔸 Optional — Rolling `web01` back after a failed update (autonomous)
 **Duration** : 15 min in class (commented walkthrough for the others) · **Objective** : restore the system of a VM from a recovery point while keeping its network identity, and choose the right recovery service (objective 10)
+
+> 🔸 **Optional** — Replaces `web01` from a recovery point (same name, same IP). Not reused later. No catch-up needed.
 **Context** : a manual update of the "v3" portal on `web01` broke the nginx configuration: `web01` answers `500`, the Load Balancer probe removed it from the pool. Nobody knows how to undo the change. The operations manager decides to go back to the 09:00 backup point, without a new VM: same name, same IP, same place in `bp-web`. The portal must not be interrupted during the operation.
 
 Simulation of the failed update (provided):

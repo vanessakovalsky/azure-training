@@ -179,8 +179,10 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
 
 ---
 
-## Lab 09.2 ⭐⭐ — Sauvegarder et restaurer le partage `partage-lyon` (semi-autonome)
+## Lab 09.2 ⭐⭐ 🔸 Optionnel — Sauvegarder et restaurer le partage `partage-lyon` (semi-autonome)
 **Durée** : 10 min · **Objectif** : sauvegarder un partage Azure Files avec le coffre et restaurer un fichier supprimé (objectif 10)
+
+> 🔸 **Optionnel** — Crée : protection de `partage-lyon` dans le coffre. Démontré par la formatrice ; non réutilisé ensuite. Rattrapage : `./scripts/catch-up/module-09/deploy.sh <NN> <SES>`
 **Contexte** : depuis le module 6, `partage-lyon` est la copie de référence du serveur de fichiers de Lyon ; File Sync propage AUSSI les suppressions. Exigence : RPO de 24 h, rétention de 30 jours, restauration d'un fichier par le support en moins d'une heure, sans dépendre du serveur de Lyon.
 **Prérequis** : lab 09.1 terminé ; partage synchronisé (module 6).
 
@@ -224,8 +226,10 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
 
 ---
 
-## Lab 09.3 ⭐⭐ — Agent MARS sur le serveur de Lyon (semi-autonome)
+## Lab 09.3 ⭐⭐ 🔸 Optionnel — Agent MARS sur le serveur de Lyon (semi-autonome)
 **Durée** : 15 min · **Objectif** : sauvegarder et restaurer un dossier d'un serveur sur site avec l'agent MARS (objectif 10)
+
+> 🔸 **Optionnel** — Crée : agent MARS et sauvegarde de `F:\Compta` sur le serveur de Lyon. Présenté dans le portail par la formatrice ; `mars-lyon.sh` n'est pas lancé. Aucun rattrapage nécessaire.
 **Contexte** : jusqu'à la fermeture de Lyon (6 mois), l'ancienne application comptable dépose chaque jour ses exports dans `F:\Compta` sur le serveur de fichiers. Ce dossier n'est PAS synchronisé avec Azure Files. La bande LTO hebdomadaire est arrêtée : la comptabilité exige une sauvegarde chaque soir de semaine à 21:00, conservée 30 jours, sans port entrant ni VPN vers Lyon.
 **Prérequis** : lab 09.1 étape 6 lancé (agent installé et inscrit) ; bloc de variables exécuté.
 
@@ -313,8 +317,10 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
 
 ---
 
-## Défi 09.5 ⭐⭐⭐ — Retour arrière de `web01` après une mise à jour ratée (autonome)
+## Défi 09.5 ⭐⭐⭐ 🔸 Optionnel — Retour arrière de `web01` après une mise à jour ratée (autonome)
 **Durée** : 15 min en séance (déroulé commenté pour les autres) · **Objectif** : restaurer le système d'une VM depuis un point de récupération en conservant son identité réseau, et choisir le service de reprise adapté (objectif 10)
+
+> 🔸 **Optionnel** — Remplace `web01` par un point de récupération (même nom, même IP). Non réutilisé ensuite. Aucun rattrapage nécessaire.
 **Contexte** : une mise à jour manuelle du portail « v3 » sur `web01` a cassé la configuration nginx : `web01` répond `500`, la sonde du Load Balancer l'a retirée du pool. Personne ne sait annuler la modification. Le chef d'exploitation décide un retour au point de sauvegarde de 09:00, sans nouvelle VM : même nom, même IP, même place dans `bp-web`. Le portail ne doit pas s'interrompre pendant l'opération.
 
 Simulation de la mise à jour ratée (fournie) :

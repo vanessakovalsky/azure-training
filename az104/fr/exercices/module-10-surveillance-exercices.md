@@ -270,8 +270,10 @@ st07 log-st07-shared 36 starveost07diag prenom.nom@exemple.fr
 
 ---
 
-## Défi 10.4 ⭐⭐⭐ — Détecter les attaques SSH par force brute (autonome)
+## Défi 10.4 ⭐⭐⭐ 🔸 Optionnel — Détecter les attaques SSH par force brute (autonome)
 **Durée** : 10 min en séance (règle livrée ; preuve vérifiée au retour de pause) · **Objectif** : créer une alerte de recherche dans les journaux avec dimensions, reliée au groupe d'actions, et en évaluer les limites (objectif 11)
+
+> 🔸 **Optionnel** — Crée : alerte de recherche dans les journaux (SSH par force brute). Démontré par la formatrice ; non réutilisé ensuite. Aucun rattrapage nécessaire.
 **Contexte** : le RSSI d'Arvéo constate dans les journaux du module 7 des tentatives de connexion SSH sur les serveurs web. Il demande une détection automatique, par serveur et par adresse source, notifiée à l'exploitation, et une requête réutilisable par l'équipe sécurité. La règle doit être livrée sous forme versionnée.
 
 Simulation des tentatives (fournie, à lancer AVANT de tester la règle) :
@@ -313,8 +315,10 @@ Visibles dans la table Syslog sous 1 à 5 min.
 
 ---
 
-## Lab 10.5 ⭐⭐ — Diagnostiquer les flux Arvéo avec Network Watcher (semi-autonome)
+## Lab 10.5 ⭐⭐ 🔸 Optionnel — Diagnostiquer les flux Arvéo avec Network Watcher (semi-autonome)
 **Durée** : 20 min (5 min avant la pause, 15 min après) · **Objectif** : diagnostiquer des flux réseau avec Network Watcher et exploiter les journaux de flux de VNet (objectif 11)
+
+> 🔸 **Optionnel** — Diagnostic Network Watcher et journal de flux (créé par `preparer-supervision.sh`). Démontré par la formatrice. Aucun rattrapage nécessaire.
 **Contexte** : l'équipe ERP ouvre un ticket : « depuis mardi soir, la base de test `sql.arveo.internal:1433` (`vm-st<NN>-test-data`) n'est plus joignable depuis le portail ; l'API répond toujours ». L'équipe sécurité demande en parallèle la preuve que SSH est refusé depuis Internet sur les serveurs web et que l'API n'accepte que le portail. Le journal de flux du spoke applicatif est actif depuis 13:30.
 **Prérequis** : préparation de 13:30 terminée (agent Network Watcher, journal de flux, VM de test démarrée) ; bloc de variables exécuté.
 

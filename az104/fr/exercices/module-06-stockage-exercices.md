@@ -261,8 +261,10 @@ Le script démarre aussi `vm-st<NN>-test-data` (défi 06.4), attache un disque d
 
 ---
 
-## Défi 06.4 ⭐⭐⭐ — Compte de données invisible d'Internet (autonome)
+## Défi 06.4 ⭐⭐⭐ 🔸 Optionnel — Compte de données invisible d'Internet (autonome)
 **Durée** : 15 min en séance (lecture commentée de la solution pour les autres) · **Objectif** : restreindre l'accès réseau au compte par private endpoint, puis le prouver (objectif 7)
+
+> 🔸 **Optionnel** — Crée : private endpoint du compte de données dans `snet-pe`, zone `privatelink.blob.core.windows.net` liée au hub et aux spokes, accès public désactivé. Démontré par la formatrice. Rattrapage : `./scripts/catch-up/module-06/deploy.sh <NN> <SES>`
 **Contexte** : l'audit de sécurité refuse tout point de terminaison public pour les données nominatives (signatures des clients). Les applications Arvéo des spokes doivent continuer à lire les preuves de livraison ; plus rien ne doit répondre depuis Internet, même avec un SAS valide. La configuration doit être versionnée et rejouable, comme celle des modules 4 et 5.
 
 **Énoncé** :
@@ -353,8 +355,10 @@ Le script démarre aussi `vm-st<NN>-test-data` (défi 06.4), attache un disque d
 
 ---
 
-## Lab 06.6 ⭐ — Exporter et synchroniser avec AzCopy (guidé)
+## Lab 06.6 ⭐ 🔸 Optionnel — Exporter et synchroniser avec AzCopy (guidé)
 **Durée** : 15 min · **Objectif** : transférer des données avec AzCopy et choisir une méthode de transfert (objectif 7)
+
+> 🔸 **Optionnel** — Crée : copies AzCopy dans le compte d'archive (non réutilisées ensuite). Calcul `Volume × 8 / Débit` traité en séance. Aucun rattrapage nécessaire.
 **Contexte** : avant la fermeture de Lyon, la DSI exige une copie figée du partage dans le compte d'archive, et un dépôt différentiel quotidien des preuves de livraison numérisées localement. Elle prépare aussi le transfert des 40 To d'historique du datacenter.
 **Prérequis** : lab 06.5 terminé (partage synchronisé), compte d'archive du lab 06.2.
 

@@ -46,8 +46,10 @@ Après le lab 08.2, la dernière valeur devient `app-st07-portail-2610.azurewebs
 
 ---
 
-## Exercice 08.1 ⭐ — Choisir le plan App Service (en binôme)
+## Exercice 08.1 ⭐ 🔸 Optionnel — Choisir le plan App Service (en binôme)
 **Durée** : 4 min · **Objectif** : choisir un niveau de plan App Service adapté à un besoin et justifier le choix (objectif 9)
+
+> 🔸 **Optionnel** — Aucune ressource créée. Traité à l'oral.
 **Contexte** : avant de migrer le portail, la DSI d'Arvéo recense quatre applications web candidates à App Service. Elle attend, pour chacune, le niveau de plan le moins cher qui couvre TOUTES les exigences.
 **Prérequis** : slides de la séquence S8.1.
 
@@ -181,8 +183,10 @@ Après le lab 08.2, la dernière valeur devient `app-st07-portail-2610.azurewebs
 
 ---
 
-## Exercice 08.3 ⭐⭐ — Mise en production de la v4 par échange, mise à l'échelle automatique (semi-autonome)
+## Exercice 08.3 ⭐⭐ 🔸 Optionnel — Mise en production de la v4 par échange, mise à l'échelle automatique (semi-autonome)
 **Durée** : 18 min · **Objectif** : mettre à jour le portail sans interruption grâce aux emplacements, puis configurer et prouver la mise à l'échelle automatique du plan (objectif 9)
+
+> 🔸 **Optionnel** — Crée : v4 en production par échange, règle de mise à l'échelle automatique du plan. Démontré par la formatrice ; non réutilisé ensuite. Rattrapage : `./scripts/catch-up/module-08/deploy.sh <NN> <SES>`
 **Contexte** : l'équipe web d'Arvéo livre la version v4 du portail. Règle de la DSI : toute version passe d'abord en recette sur l'adresse de l'emplacement `staging`, puis en production par échange, sans aucune requête client en erreur. Le plan doit tenir les pics du matin (8 h à 10 h) seul, avec au moins deux instances en permanence.
 **Prérequis** : lab 08.2 terminé.
 
@@ -223,8 +227,10 @@ Après le lab 08.2, la dernière valeur devient `app-st07-portail-2610.azurewebs
 
 ---
 
-## Lab 08.4 ⭐⭐ — Construire l'image de l'API dans ACR et l'exécuter sur ACI (semi-autonome)
+## Lab 08.4 ⭐⭐ 🔸 Optionnel — Construire l'image de l'API dans ACR et l'exécuter sur ACI (semi-autonome)
 **Durée** : 25 min (15 min avant la pause, 10 min après) · **Objectif** : construire une image dans Azure Container Registry et l'exécuter sur Azure Container Instances avec une identité managée (objectif 9)
+
+> 🔸 **Optionnel** — Crée : registre ACR, image `arveo/api-suivi-colis:2.0`, conteneur `aci-st<NN>-api`. Démontré par la formatrice ; non réutilisé après le module 8. Rattrapage : `./scripts/catch-up/module-08/deploy.sh <NN> <SES>`
 **Contexte** : l'équipe de développement d'Arvéo empaquette l'API de suivi des colis en image de conteneur : même contrat JSON qu'au module 7 (`"service":"api-suivi-colis"`), mais plus de cloud-init ni de nginx à mettre à jour sur chaque VM. La sécurité impose un registre privé, aucun mot de passe de registre stocké, et l'accès en lecture SEULE de la plateforme d'exécution au registre. Ce premier déploiement sur ACI est une recette technique, publique et temporaire.
 **Prérequis** : bloc de variables exécuté ; fournisseurs `Microsoft.ContainerRegistry` et `Microsoft.ContainerInstance` enregistrés (formatrice).
 
@@ -268,8 +274,10 @@ Après le lab 08.2, la dernière valeur devient `app-st07-portail-2610.azurewebs
 
 ---
 
-## Défi 08.5 ⭐⭐⭐ — Portail PaaS et API conteneurisée privée (autonome)
+## Défi 08.5 ⭐⭐⭐ 🔸 Optionnel — Portail PaaS et API conteneurisée privée (autonome)
 **Durée** : 25 min (apprenants rapides, pendant le lab 08.4 et la démonstration AKS ; sinon solution commentée) · **Objectif** : relier une application App Service à un conteneur privé par l'intégration au réseau virtuel, sans exposer l'API sur Internet (objectif 9)
+
+> 🔸 **Optionnel** — Crée : sous-réseaux `snet-appsvc` et `snet-aci`, conteneur privé, intégration au réseau virtuel. Non réutilisé ensuite. Rattrapage : `./scripts/catch-up/module-08/deploy.sh <NN> <SES> --defi`
 **Contexte** : la recette du lab 08.4 est concluante, mais le RSSI refuse toute API exposée sur Internet. Exigence : le portail PaaS appelle l'API conteneurisée par une adresse PRIVÉE du spoke applicatif ; seul le portail peut l'appeler, ni les VMs web du module 7 ni Internet. La version v4 du portail relaie déjà `/api/` vers l'adresse lue dans `API_URL`.
 
 **Exigences** :

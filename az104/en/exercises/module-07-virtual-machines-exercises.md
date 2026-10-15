@@ -49,8 +49,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Exercise 07.1 ⭐ — Sizing the Arvéo workloads (in pairs)
+## Exercise 07.1 ⭐ 🔸 Optional — Sizing the Arvéo workloads (in pairs)
 **Duration** : 10 min · **Objective** : size a VM (size, disks, pricing option) for an Arvéo workload and justify the choice (objective 8)
+
+> 🔸 **Optional** — No resource created. Covered orally (workload 2).
 **Context** : Arvéo IT is preparing the migration budget for four workloads of the Lyon datacenter. For each one, it expects a justified proposal.
 **Prerequisites** : S7.1 slides.
 
@@ -206,8 +208,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Exercise 07.3 ⭐⭐ — Second web server in Bicep (semi-autonomous)
+## Exercise 07.3 ⭐⭐ 🔸 Optional — Second web server in Bicep (semi-autonomous)
 **Duration** : 15 min · **Objective** : deploy a VM reproducibly with Bicep, in another zone (objective 8)
+
+> 🔸 **Optional** — Creates: `vm-st<NN>-web02` (zone 2), used in modules 7, 9 and 10. Catch-up (run by everyone in class): `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Context** : the Arvéo operations team wants a single model for every web server, versioned in the Git repository. The second portal server is created in zone 2 from this model.
 **Prerequisites** : lab 07.2 completed (NAT gateway, password).
 
@@ -271,8 +275,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Challenge 07.5 ⭐⭐⭐ — Parcel-tracking API on a VMSS (autonomous)
+## Challenge 07.5 ⭐⭐⭐ 🔸 Optional — Parcel-tracking API on a VMSS (autonomous)
 **Duration** : 30 min · **Objective** : deploy a zone-redundant scale set with autoscale behind an internal Load Balancer (objective 8)
+
+> 🔸 **Optional** — Creates: VMSS `vmss-st<NN>-api` and internal Load Balancer `lbi-st<NN>-api`. Catch-up: `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Context** : the parcel-tracking API is called by the portal (and tomorrow by the drivers' mobile apps). Its load varies strongly with delivery times. The API must never be exposed to the Internet: only the portal (`snet-web`) may call it, and administration goes through Bastion.
 
 **Requirements** :
@@ -306,8 +312,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Lab 07.6 ⭐⭐ — Portal v2 through the Custom Script extension (semi-autonomous)
+## Lab 07.6 ⭐⭐ 🔸 Optional — Portal v2 through the Custom Script extension (semi-autonomous)
 **Duration** : 15 min · **Objective** : automate VM configuration with the Custom Script extension (objective 8)
+
+> 🔸 **Optional** — Creates: Custom Script extension (portal v2) on `web01` and `web02`. Catch-up: `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Context** : version 2 of the portal relays `/api/` calls to the parcel-tracking API. It must be deployed on both existing web servers, with no interactive session, in a replayable way.
 **Prerequisites** : lab 07.4 completed; challenge 07.5 completed or catch-up run (otherwise `/api/` returns `502`).
 
@@ -336,8 +344,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Lab 07.7 ⭐⭐ — Azure Monitor agent and data collection rule (semi-autonomous)
+## Lab 07.7 ⭐⭐ 🔸 Optional — Azure Monitor agent and data collection rule (semi-autonomous)
 **Duration** : 20 min · **Objective** : install the Azure Monitor agent as an extension and collect Syslog and performance data from the web VMs (objective 8, preparing objective 11)
+
+> 🔸 **Optional** — Creates: Azure Monitor agent and data collection rule for the web VMs, used in module 10. Catch-up: `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Context** : the Arvéo operations team wants to centralize authentication logs and performance counters of the web servers in the single workspace of the foundation (module 3), used in module 10.
 **Prerequisites** : `vm-st<NN>-web01` and `vm-st<NN>-web02` running, Internet egress through the NAT gateway.
 

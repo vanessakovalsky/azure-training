@@ -49,8 +49,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Exercice 07.1 ⭐ — Dimensionner les charges Arvéo (en binôme)
+## Exercice 07.1 ⭐ 🔸 Optionnel — Dimensionner les charges Arvéo (en binôme)
 **Durée** : 10 min · **Objectif** : dimensionner une VM (taille, disques, option tarifaire) pour une charge Arvéo et justifier le choix (objectif 8)
+
+> 🔸 **Optionnel** — Aucune ressource créée. Traité à l'oral (charge 2).
 **Contexte** : la DSI d'Arvéo prépare le budget de migration de quatre charges du datacenter de Lyon. Pour chacune, elle attend une proposition argumentée.
 **Prérequis** : slides de la séquence S7.1.
 
@@ -206,8 +208,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Exercice 07.3 ⭐⭐ — Deuxième serveur web en Bicep (semi-autonome)
+## Exercice 07.3 ⭐⭐ 🔸 Optionnel — Deuxième serveur web en Bicep (semi-autonome)
 **Durée** : 15 min · **Objectif** : déployer une VM de façon reproductible par Bicep, dans une autre zone (objectif 8)
+
+> 🔸 **Optionnel** — Crée : `vm-st<NN>-web02` (zone 2), utilisée aux modules 7, 9 et 10. Rattrapage (lancé par tous en séance) : `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Contexte** : l'équipe d'exploitation d'Arvéo veut un modèle unique pour tous les serveurs web, versionné dans le dépôt Git. Le second serveur du portail est créé en zone 2 à partir de ce modèle.
 **Prérequis** : lab 07.2 terminé (passerelle NAT, mot de passe).
 
@@ -271,8 +275,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Défi 07.5 ⭐⭐⭐ — API de suivi des colis en VMSS (autonome)
+## Défi 07.5 ⭐⭐⭐ 🔸 Optionnel — API de suivi des colis en VMSS (autonome)
 **Durée** : 30 min · **Objectif** : déployer un groupe identique zone-redondant avec mise à l'échelle automatique derrière un Load Balancer interne (objectif 8)
+
+> 🔸 **Optionnel** — Crée : VMSS `vmss-st<NN>-api` et Load Balancer interne `lbi-st<NN>-api`. Rattrapage : `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Contexte** : l'API de suivi des colis est appelée par le portail (et demain par les applications mobiles des chauffeurs). Sa charge varie fortement selon l'heure de livraison. L'API ne doit jamais être exposée sur Internet : seul le portail (`snet-web`) peut l'appeler, et l'administration passe par Bastion.
 
 **Exigences** :
@@ -306,8 +312,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Lab 07.6 ⭐⭐ — Portail v2 par extension Custom Script (semi-autonome)
+## Lab 07.6 ⭐⭐ 🔸 Optionnel — Portail v2 par extension Custom Script (semi-autonome)
 **Durée** : 15 min · **Objectif** : automatiser la configuration des VMs par l'extension Custom Script (objectif 8)
+
+> 🔸 **Optionnel** — Crée : extension Custom Script (portail v2) sur `web01` et `web02`. Rattrapage : `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Contexte** : la version 2 du portail relaie les appels `/api/` vers l'API de suivi des colis. Elle doit être déployée sur les deux serveurs web existants, sans connexion interactive, de façon rejouable.
 **Prérequis** : lab 07.4 terminé ; défi 07.5 terminé ou rattrapage exécuté (sinon `/api/` répond `502`).
 
@@ -336,8 +344,10 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ---
 
-## Lab 07.7 ⭐⭐ — Agent Azure Monitor et règle de collecte (semi-autonome)
+## Lab 07.7 ⭐⭐ 🔸 Optionnel — Agent Azure Monitor et règle de collecte (semi-autonome)
 **Durée** : 20 min · **Objectif** : installer l'agent Azure Monitor par extension et collecter Syslog et performances des VMs web (objectif 8, préparation de l'objectif 11)
+
+> 🔸 **Optionnel** — Crée : agent Azure Monitor et règle de collecte des VMs web, utilisés au module 10. Rattrapage : `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Contexte** : l'équipe d'exploitation d'Arvéo veut centraliser les journaux d'authentification et les compteurs de performance des serveurs web dans l'espace de travail unique du socle (module 3), exploité au module 10.
 **Prérequis** : `vm-st<NN>-web01` et `vm-st<NN>-web02` en fonctionnement, sortie Internet par la passerelle NAT.
 

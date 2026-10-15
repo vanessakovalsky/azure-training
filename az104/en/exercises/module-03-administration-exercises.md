@@ -290,7 +290,7 @@ Mandatory tags on every resource (module 2 policy): `Projet=Arveo`, `Environneme
 ## Challenge 03.5 ⭐⭐⭐ — Bring the foundation under IaC and fix a drift (autonomous)
 **Duration** : 10 min · **Objective** : deploy a parameterized Bicep file reproducibly after a `what-if` check (objective 4)
 
-> 🔸 **Adjusted session**: replaced by `./scripts/m3/deploy.sh <NN>` (deploys all three foundation resources in 1–2 min). Complete it independently if you finish early.
+> 🔸 **Adjusted session**: replaced by `./scripts/deploy.sh <NN>` (deploys all three foundation resources in 1–2 min). Complete it independently if you finish early.
 **Context** : the `rg-stNN-shared` foundation was built with three different tools. Arvéo IT wants a single file, the source of truth, able to recreate the foundation identically and to fix any manual change.
 
 **Assignment** :

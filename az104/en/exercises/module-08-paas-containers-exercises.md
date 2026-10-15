@@ -48,8 +48,10 @@ After lab 08.2, the last value becomes `app-st07-portail-2610.azurewebsites.net`
 
 ---
 
-## Exercise 08.1 ⭐ — Choosing the App Service plan (in pairs)
+## Exercise 08.1 ⭐ 🔸 Optional — Choosing the App Service plan (in pairs)
 **Duration** : 4 min · **Objective** : choose an App Service plan tier that fits a need and justify the choice (objective 9)
+
+> 🔸 **Optional** — No resource created. Covered orally.
 **Context** : before migrating the portal, Arvéo's IT department lists four web apps that are candidates for App Service. For each one, it expects the cheapest plan tier that covers ALL requirements.
 **Prerequisites** : slides of sequence S8.1.
 
@@ -183,8 +185,10 @@ After lab 08.2, the last value becomes `app-st07-portail-2610.azurewebsites.net`
 
 ---
 
-## Exercise 08.3 ⭐⭐ — Releasing v4 with a swap, autoscale (semi-autonomous)
+## Exercise 08.3 ⭐⭐ 🔸 Optional — Releasing v4 with a swap, autoscale (semi-autonomous)
 **Duration** : 18 min · **Objective** : update the portal with no downtime thanks to slots, then configure and prove autoscale on the plan (objective 9)
+
+> 🔸 **Optional** — Creates: v4 in production via swap, plan autoscale rule. Demonstrated by the trainer; not reused later. Catch-up: `./scripts/catch-up/module-08/deploy.sh <NN> <SES>`
 **Context** : Arvéo's web team delivers portal version v4. IT rule: every version first goes through acceptance testing on the `staging` slot address, then to production through a swap, with no customer request failing. The plan must handle the morning peaks (8 to 10 am) on its own, with at least two instances at all times.
 **Prerequisites** : lab 08.2 completed.
 
@@ -225,8 +229,10 @@ After lab 08.2, the last value becomes `app-st07-portail-2610.azurewebsites.net`
 
 ---
 
-## Lab 08.4 ⭐⭐ — Building the API image in ACR and running it on ACI (semi-autonomous)
+## Lab 08.4 ⭐⭐ 🔸 Optional — Building the API image in ACR and running it on ACI (semi-autonomous)
 **Duration** : 25 min (15 min before the break, 10 min after) · **Objective** : build an image in Azure Container Registry and run it on Azure Container Instances with a managed identity (objective 9)
+
+> 🔸 **Optional** — Creates: ACR registry, image `arveo/api-suivi-colis:2.0`, container `aci-st<NN>-api`. Demonstrated by the trainer; not reused after module 8. Catch-up: `./scripts/catch-up/module-08/deploy.sh <NN> <SES>`
 **Context** : Arvéo's development team packages the parcel-tracking API as a container image: same JSON contract as in module 7 (`"service":"api-suivi-colis"`), but no more cloud-init or nginx to update on each VM. Security requires a private registry, no registry password stored anywhere, and READ-ONLY access from the runtime platform to the registry. This first ACI deployment is a technical acceptance test, public and temporary.
 **Prerequisites** : variable block run; `Microsoft.ContainerRegistry` and `Microsoft.ContainerInstance` providers registered (trainer).
 
@@ -270,8 +276,10 @@ After lab 08.2, the last value becomes `app-st07-portail-2610.azurewebsites.net`
 
 ---
 
-## Challenge 08.5 ⭐⭐⭐ — PaaS portal and private containerized API (autonomous)
+## Challenge 08.5 ⭐⭐⭐ 🔸 Optional — PaaS portal and private containerized API (autonomous)
 **Duration** : 25 min (fast learners, during lab 08.4 and the AKS demo; otherwise walkthrough of the solution) · **Objective** : connect an App Service app to a private container through VNet integration, without exposing the API to the Internet (objective 9)
+
+> 🔸 **Optional** — Creates: subnets `snet-appsvc` and `snet-aci`, private container, VNet integration. Not reused later. Catch-up: `./scripts/catch-up/module-08/deploy.sh <NN> <SES> --defi`
 **Context** : the acceptance test of lab 08.4 is conclusive, but the CISO refuses any API exposed to the Internet. Requirement: the PaaS portal calls the containerized API through a PRIVATE address of the application spoke; only the portal can call it, neither the module 7 web VMs nor the Internet. Portal version v4 already relays `/api/` to the address read from `API_URL`.
 
 **Requirements** :

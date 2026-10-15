@@ -270,8 +270,10 @@ st07 log-st07-shared 36 starveost07diag firstname.lastname@example.com
 
 ---
 
-## Challenge 10.4 ⭐⭐⭐ — Detecting SSH brute-force attacks (autonomous)
+## Challenge 10.4 ⭐⭐⭐ 🔸 Optional — Detecting SSH brute-force attacks (autonomous)
 **Duration** : 10 min in class (rule delivered; proof checked after the break) · **Objective** : create a log search alert with dimensions, linked to the action group, and assess its limits (objective 11)
+
+> 🔸 **Optional** — Creates: log search alert (SSH brute force). Demonstrated by the trainer; not reused later. No catch-up needed.
 **Context** : Arvéo's CISO notices SSH connection attempts on the web servers in the module 7 logs. An automatic detection is requested, per server and per source address, notified to operations, together with a query reusable by the security team. The rule must be delivered in versioned form.
 
 Simulation of the attempts (provided, to run BEFORE testing the rule):
@@ -313,8 +315,10 @@ Visibles dans la table Syslog sous 1 à 5 min.
 
 ---
 
-## Lab 10.5 ⭐⭐ — Diagnosing Arvéo flows with Network Watcher (semi-autonomous)
+## Lab 10.5 ⭐⭐ 🔸 Optional — Diagnosing Arvéo flows with Network Watcher (semi-autonomous)
 **Duration** : 20 min (5 min before the break, 15 min after) · **Objective** : diagnose network flows with Network Watcher and use virtual network flow logs (objective 11)
+
+> 🔸 **Optional** — Network Watcher diagnosis and flow log (created by `preparer-supervision.sh`). Demonstrated by the trainer. No catch-up needed.
 **Context** : the ERP team opens a ticket: "since Tuesday evening, the test database `sql.arveo.internal:1433` (`vm-st<NN>-test-data`) can no longer be reached from the portal; the API still answers". In parallel, the security team asks for proof that SSH is denied from the Internet on the web servers and that the API only accepts the portal. The flow log of the application spoke has been active since 13:30.
 **Prerequisites** : 13:30 preparation completed (Network Watcher agent, flow log, test VM started); variable block run.
 

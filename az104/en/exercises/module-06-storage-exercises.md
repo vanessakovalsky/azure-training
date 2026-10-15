@@ -261,8 +261,10 @@ The script also starts `vm-st<NN>-test-data` (challenge 06.4), attaches a data d
 
 ---
 
-## Challenge 06.4 ⭐⭐⭐ — Data account invisible from the Internet (autonomous)
+## Challenge 06.4 ⭐⭐⭐ 🔸 Optional — Data account invisible from the Internet (autonomous)
 **Duration** : 15 min in session (commented walkthrough of the solution for the others) · **Objective** : restrict network access to the account with a private endpoint, then prove it (objective 7)
+
+> 🔸 **Optional** — Creates: data account private endpoint in `snet-pe`, zone `privatelink.blob.core.windows.net` linked to hub and spokes, public access disabled. Demonstrated by the trainer. Catch-up: `./scripts/catch-up/module-06/deploy.sh <NN> <SES>`
 **Context** : the security audit rejects any public endpoint for personal data (customer signatures). Arvéo applications in the spokes must keep reading the proofs of delivery; nothing must respond from the Internet any more, even with a valid SAS. The configuration must be versioned and replayable, like those of modules 4 and 5.
 
 **Assignment** :
@@ -353,8 +355,10 @@ The script also starts `vm-st<NN>-test-data` (challenge 06.4), attaches a data d
 
 ---
 
-## Lab 06.6 ⭐ — Export and synchronize with AzCopy (guided)
+## Lab 06.6 ⭐ 🔸 Optional — Export and synchronize with AzCopy (guided)
 **Duration** : 15 min · **Objective** : transfer data with AzCopy and choose a transfer method (objective 7)
+
+> 🔸 **Optional** — Creates: AzCopy copies in the archive account (not reused later). The `Volume × 8 / Throughput` calculation is covered in class. No catch-up needed.
 **Context** : before Lyon closes, the IT department requires a frozen copy of the share in the archive account, and a daily differential upload of the proofs of delivery scanned locally. It is also preparing the transfer of the datacenter's 40 TB of history.
 **Prerequisites** : lab 06.5 completed (share synchronized), archive account from lab 06.2.
 
