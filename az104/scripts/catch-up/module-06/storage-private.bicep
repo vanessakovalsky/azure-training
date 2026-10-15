@@ -107,12 +107,10 @@ resource zoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023
   }
 }
 
-// IP lue sur la carte réseau créée par la plateforme, nommée par customNetworkInterfaceName
+// IP lue sur la carte réseau créée par la plateforme (nommée par customNetworkInterfaceName),
+// par reference() dans une sortie : évaluée en fin de déploiement, après le private endpoint
+// (une ressource « existing » est lue trop tôt : carte absente au premier déploiement)
 // (customDnsConfigs peut être vide quand un groupe de zones DNS est associé)
-resource peNic 'Microsoft.Network/networkInterfaces@2023-11-01' existing = {
-  name: 'nic-${prefix}-pe-blob'
-}
-
-output privateEndpointIp string = peNic.properties.ipConfigurations[0].properties.privateIPAddress
+output privateEndpointIp string = reference(resourceId('Microsoft.Network/networkInterfaces', 'nic-${prefix}-pe-blob'), '2023-11-01').ipConfigurations[0].properties.privateIPAddress
 output blobEndpoint string = dataAccount.properties.primaryEndpoints.blob
 output accountName string = dataAccount.name
