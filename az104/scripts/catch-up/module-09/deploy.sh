@@ -44,10 +44,10 @@ backup_now() {   # backup_now <VM|AzureFileShare> <nom>
 }
 
 echo "== Étape 1/7 : prérequis"
-for VM in web01 web02; do
-  exists vm show -g "$APP" -n "vm-${ST}-${VM}" \
-    || { echo "   vm-${ST}-${VM} absente : ./scripts/catch-up/module-07/deploy.sh ${NN}" >&2; exit 1; }
-done
+exists vm show -g "$APP" -n "vm-${ST}-web01" \
+  || { echo "   vm-${ST}-web01 absente : ./scripts/catch-up/module-07/deploy.sh ${NN}" >&2; exit 1; }
+WEB02=true
+exists vm show -g "$APP" -n "vm-${ST}-web02" || { WEB02=false; echo "   vm-${ST}-web02 absente : étape 4 ignorée (web01 seule, quota)"; }
 exists storage share-rm show -g "$DATA" --storage-account "$SA_FILES" -n partage-lyon \
   || { echo "   partage-lyon absent : ./scripts/catch-up/module-06/deploy.sh ${NN} ${SES}" >&2; exit 1; }
 LYON_OK=true
@@ -67,7 +67,9 @@ echo "== Étape 3/7 : web01 (lancer-sauvegarde.sh)"
 "${LABS}/lancer-sauvegarde.sh" "$NN"
 
 echo "== Étape 4/7 : web02"
-if [[ -z "$(item VM "vm-${ST}-web02")" ]]; then
+if [[ "$WEB02" == false ]]; then
+  echo "   vm-${ST}-web02 absente : ignorée"
+elif [[ -z "$(item VM "vm-${ST}-web02")" ]]; then
   az backup protection enable-for-vm -g "$SHARED" -v "$VAULT" --policy-name pol-vm-arveo \
     --vm "$(az vm show -g "$APP" -n "vm-${ST}-web02" --query id -o tsv)" -o none
   echo "   vm-${ST}-web02 : sauvegarde $(backup_now VM "vm-${ST}-web02")"

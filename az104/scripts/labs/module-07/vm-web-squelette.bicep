@@ -32,7 +32,7 @@ param adminPassword string
 param diagStorageName string = 'starveost${numero}diag'
 
 param location string = resourceGroup().location
-param vmSize string = 'Standard_B2s_v2'
+param vmSize string = 'Standard_D2as_v7'
 param adminUsername string = 'arveoadmin'
 
 var prefix = 'st${numero}'

@@ -29,9 +29,15 @@ param diagStorageName string = ''
 
 param location string = resourceGroup().location
 
+@description('Taille des VMs web et des instances du VMSS (quota : voir deploy.sh)')
+param vmSize string = 'Standard_D2as_v7'
+
+@description('false = web01 seule (quota insuffisant pour web02 et le VMSS)')
+param includeWeb02 bool = true
+
 var prefix = 'st${numero}'
 var octet = int(numero)
-var webs = [
+var websAll = [
   {
     nomCourt: 'web01'
     zone: '1'
@@ -46,6 +52,9 @@ var webs = [
     dataDiskSizeGB: 0
     deploy: deployWeb02
   }
+]
+var webs = includeWeb02 ? websAll : [
+  websAll[0]
 ]
 
 // ---------- Load Balancer public (S7.3, lab 07.4) ----------
@@ -71,6 +80,7 @@ module webVms 'vm-web.bicep' = [for web in webs: if (web.deploy) {
     lbBackendPoolIds: [
       lbWeb.outputs.backendPoolId
     ]
+    vmSize: vmSize
     location: location
   }
 }]
@@ -81,6 +91,7 @@ module api 'vmss-api.bicep' = if (deployVmss) {
   params: {
     numero: numero
     adminPassword: adminPassword
+    vmSize: vmSize
     location: location
   }
 }
@@ -129,6 +140,7 @@ module dcr '../../labs/module-07/dcr-arveo-linux.bicep' = {
   name: 'rattrapage-m07-dcr'
   params: {
     numero: numero
+    vmNames: [for web in webs: 'vm-${prefix}-${web.nomCourt}']
     location: location
   }
   dependsOn: [

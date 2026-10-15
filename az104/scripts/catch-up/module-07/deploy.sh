@@ -8,7 +8,9 @@
 # 6. NSG de snet-app, VMs existantes rattachées au pool, disque de données de web01
 # 7. Contrôles : portail v2 et API à travers lbe-stNN-web
 # Durée : 10 à 20 min. Idempotent : les VMs et le VMSS existants sont conservés.
-# Usage : ./deploy.sh <NN>
+# Quota (session d'octobre 2026, 10 vCPU par famille) : taille selon NN, surcharge par VM_SIZE ;
+# web02 et VMSS pour st01 seulement (démonstration), M7_COMPLET=1 pour tous si le quota le permet.
+# Usage : ./deploy.sh <NN>        ou        VM_SIZE=<taille> M7_COMPLET=1 ./deploy.sh <NN>
 set -euo pipefail
 
 NN="${1:?Numéro de stagiaire sur deux chiffres requis (ex. 07)}"
@@ -24,6 +26,12 @@ TAGS=(Projet=Arveo Environnement=Formation "Proprietaire=${ST}")
 DIR="$(cd "$(dirname "$0")" && pwd)"
 LABS="${DIR}/../../labs/module-07"
 PW_FILE="${HOME}/.arveo/web-admin.txt"
+if   [[ -n "${VM_SIZE:-}" ]]; then SIZE="$VM_SIZE"
+elif [[ "$NN" == "01" ]];      then SIZE="Standard_D2s_v7"
+elif (( 10#$NN <= 6 ));        then SIZE="Standard_D2als_v7"
+else                                SIZE="Standard_D2as_v7"
+fi
+if [[ -n "${M7_COMPLET:-}" || "$NN" == "01" ]]; then COMPLET=true; else COMPLET=false; fi
 
 az config set extension.use_dynamic_install=yes_without_prompt -o none 2>/dev/null || true
 
@@ -84,6 +92,8 @@ D_WEB01=true; D_WEB02=true; D_VMSS=true
 exists vm show -g "$APP" -n "vm-${ST}-web01" && D_WEB01=false
 exists vm show -g "$APP" -n "vm-${ST}-web02" && D_WEB02=false
 exists vmss show -g "$APP" -n "vmss-${ST}-api" && D_VMSS=false
+if [[ "$COMPLET" == false ]]; then D_WEB02=false; D_VMSS=false; fi
+echo "   taille : ${SIZE} ; web02 et VMSS : ${COMPLET}"
 echo "   création : web01=${D_WEB01} web02=${D_WEB02} vmss=${D_VMSS}"
 for VM in web01 web02; do   # identité requise par l'agent Azure Monitor sur les VMs existantes
   exists vm show -g "$APP" -n "vm-${ST}-${VM}" \
@@ -95,6 +105,7 @@ az deployment group create \
   --template-file "${DIR}/main.bicep" \
   --parameters numero="$NN" adminPassword="$ADMIN_PW" \
                deployWeb01="$D_WEB01" deployWeb02="$D_WEB02" deployVmss="$D_VMSS" \
+               vmSize="$SIZE" includeWeb02="$COMPLET" \
                diagStorageName="${DIAG_SA}" \
   --query "properties.outputs.{IP_LB_web:lbPublicIp.value, IP_API:apiFrontendIp.value}" \
   -o table
@@ -106,6 +117,7 @@ if exists network nsg show -g "$APP" -n "nsg-${ST}-app"; then
   echo "   snet-app : nsg-${ST}-app associé"
 fi
 for VM in web01 web02; do   # VMs créées pendant les labs : carte rattachée au pool si besoin
+  exists vm show -g "$APP" -n "vm-${ST}-${VM}" || continue
   NIC_ID=$(az vm show -g "$APP" -n "vm-${ST}-${VM}" \
     --query "networkProfile.networkInterfaces[0].id" -o tsv)
   POOLS=$(az network nic show --ids "$NIC_ID" \

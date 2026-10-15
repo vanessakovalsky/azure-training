@@ -143,7 +143,7 @@ Expected result: `Trainee: st07 · Subscription: 1a2b3c4d-…` (identifier speci
 | Allowed regions | `rg-stNN-shared`, `-hub`, `-data`, `-app` | `francecentral` |
 | Allowed regions | `rg-stNN-spoke` | `francecentral`, `northeurope` |
 | Allowed regions | `rg-stNN-lyon` | `francecentral` |
-| Allowed VM sizes | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6` |
+| Allowed VM sizes | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6`, `Standard_D2als_v7`, `Standard_D2as_v7`, `Standard_D2s_v7` |
 
 Assignment naming conventions:
 - `pa-stNN-loc-<suffix>` (e.g. `pa-st07-loc-hub`)

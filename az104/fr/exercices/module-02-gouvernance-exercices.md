@@ -141,7 +141,7 @@ Résultat attendu : `Stagiaire : st07 · Abonnement : 1a2b3c4d-…` (identifiant
 | Régions autorisées | `rg-stNN-shared`, `-hub`, `-data`, `-app` | `francecentral` |
 | Régions autorisées | `rg-stNN-spoke` | `francecentral`, `northeurope` |
 | Régions autorisées | `rg-stNN-lyon` | `francecentral` |
-| Tailles de VM autorisées | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6` |
+| Tailles de VM autorisées | `rg-stNN-app`, `rg-stNN-lyon` | `Standard_B2s_v2`, `Standard_F1als_v7`, `Standard_F1alds_v7`, `Standard_D2as_v6`, `Standard_D2s_v6`, `Standard_D2als_v7`, `Standard_D2as_v7`, `Standard_D2s_v7` |
 
 Conventions de nommage des affectations :
 - `pa-stNN-loc-<suffixe>` (ex. `pa-st07-loc-hub`)

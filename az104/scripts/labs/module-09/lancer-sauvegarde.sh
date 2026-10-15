@@ -29,8 +29,10 @@ az config set extension.use_dynamic_install=yes_without_prompt -o none 2>/dev/nu
 
 echo "== Démarrage des VMs"
 for VM in web01 web02; do
-  az vm show -g "$RG_APP" -n "vm-${ST}-${VM}" -o none 2>/dev/null \
-    || { echo "   vm-${ST}-${VM} absente : ./scripts/catch-up/module-07/deploy.sh ${NN}" >&2; exit 1; }
+  if ! az vm show -g "$RG_APP" -n "vm-${ST}-${VM}" -o none 2>/dev/null; then
+    [[ "$VM" == web02 ]] && { echo "   vm-${ST}-web02 absente : ignorée (web01 seule, quota)"; continue; }
+    echo "   vm-${ST}-${VM} absente : ./scripts/catch-up/module-07/deploy.sh ${NN}" >&2; exit 1
+  fi
   STATE=$(az vm get-instance-view -g "$RG_APP" -n "vm-${ST}-${VM}" \
     --query "instanceView.statuses[?starts_with(code, 'PowerState')].code | [0]" -o tsv)
   [[ "$STATE" == "PowerState/running" ]] || az vm start -g "$RG_APP" -n "vm-${ST}-${VM}" -o none

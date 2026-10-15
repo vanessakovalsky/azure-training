@@ -37,8 +37,10 @@ WS_ID=$(az monitor log-analytics workspace show -g "$SHARED" -n "log-${ST}-share
 
 echo "== VMs web"
 for VM in web01 web02; do
-  exists vm show -g "$APP" -n "vm-${ST}-${VM}" \
-    || { echo "   vm-${ST}-${VM} absente : ./scripts/catch-up/module-07/deploy.sh ${NN}" >&2; exit 1; }
+  if ! exists vm show -g "$APP" -n "vm-${ST}-${VM}"; then
+    [[ "$VM" == web02 ]] && { echo "   vm-${ST}-web02 absente : ignorée (web01 seule, quota)"; continue; }
+    echo "   vm-${ST}-${VM} absente : ./scripts/catch-up/module-07/deploy.sh ${NN}" >&2; exit 1
+  fi
   az vm start -g "$APP" -n "vm-${ST}-${VM}" -o none
   echo "   vm-${ST}-${VM} : $(az vm get-instance-view -g "$APP" -n "vm-${ST}-${VM}" \
     --query "instanceView.statuses[?starts_with(code, 'PowerState/')].displayStatus | [0]" -o tsv)"

@@ -23,6 +23,7 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
 NN=<NN>
 OCT=$((10#$NN))
 ST="st${NN}"
+if [[ "$NN" == "01" ]]; then SIZE=Standard_D2s_v7; elif (( OCT <= 6 )); then SIZE=Standard_D2als_v7; else SIZE=Standard_D2as_v7; fi   # taille selon le numéro (quotas de la session)
 RG_HUB="rg-${ST}-hub"
 RG_SPOKE="rg-${ST}-spoke"
 RG_APP="rg-${ST}-app"
@@ -65,12 +66,12 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ### Étapes
 1. Pour chaque charge, proposer : famille et taille, type de disque, option tarifaire.
-2. Vérifier pour la charge 1 que la taille retenue est disponible dans les trois zones de France Central :
+2. Vérifier les zones de France Central où la taille de la session est disponible pour l'abonnement :
    ```bash
-   az vm list-skus -l francecentral --size Standard_B2s_v2 --resource-type virtualMachines \
-     --query "[].{Taille:name, Zones:join(',', locationInfo[0].zones)}" -o table
+   az vm list-skus -l francecentral --size "$SIZE" --resource-type virtualMachines \
+     --query "[?name=='${SIZE}'].{Taille:name, Zones:join(',', locationInfo[0].zones), Restrictions:join(',', restrictions[].restrictionInfo.zones[])}" -o table
    ```
-   Résultat attendu : une ligne `Standard_B2s_v2` avec les zones `1,2,3` (ordre variable).
+   Résultat attendu : zones `1,2,3`, restriction `3` pour l'abonnement de formation → zones utilisables : 1 et 2 (d'où `web01` en zone 1, `web02` en zone 2, VMSS en zones 1 et 2).
 3. Relever le quota régional de vCPU de l'abonnement partagé :
    ```bash
    Q="[?name.value=='cores' || name.value=='standardBSv2Family']"
@@ -140,7 +141,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    az network nic create -g "$RG_APP" -n "nic-${ST}-web01" -l "$LOC" --subnet "$SNET_WEB" \
      --private-ip-address "10.${OCT}.4.11" --tags $TAGS -o none
    az vm create -g "$RG_APP" -n "vm-${ST}-web01" -l "$LOC" --zone 1 --nics "nic-${ST}-web01" \
-     --image Ubuntu2404 --size Standard_B2s_v2 \
+     --image Ubuntu2404 --size "$SIZE" \
      --os-disk-name "osdisk-${ST}-web01" --storage-sku StandardSSD_LRS \
      --admin-username arveoadmin --authentication-type password \
      --admin-password "$ADMIN_PW" \
@@ -248,6 +249,8 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 **Contexte** : les clients d'Arvéo accèdent au portail par une adresse publique unique. La perte d'un serveur, ou d'une zone entière de France Central, ne doit pas interrompre le service.
 **Prérequis** : `vm-st<NN>-web01` (zone 1) et `vm-st<NN>-web02` (zone 2) en fonctionnement.
 
+> ⚠️ **Session d'octobre 2026 (quota)** : `web02` n'existe que sur `st01`. Pool `bp-web` à un seul membre (`web01`) ; bascule entre zones démontrée par la formatrice sur `st01`.
+
 **Énoncé** :
 1. Créer dans `rg-st<NN>-app` l'IP publique zone-redondante `pip-st<NN>-lbe-web` et le Load Balancer Standard `lbe-st<NN>-web` (frontal `fe-web`, pool `bp-web`).
 2. Créer la sonde `hp-http` (HTTP, port 80, chemin `/`) et la règle `rule-http` (TCP 80 → 80) SANS SNAT sortant.
@@ -285,7 +288,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 | Élément | Exigence |
 |---|---|
-| Instances | VMSS Flexible `vmss-st<NN>-api`, `Standard_B2s_v2`, Ubuntu 24.04, zones 1, 2 et 3, dans `snet-app` |
+| Instances | VMSS Flexible `vmss-st<NN>-api`, taille `$SIZE`, Ubuntu 24.04, zones 1 et 2, dans `snet-app` |
 | Configuration | `scripts/labs/module-07/cloud-init-api.yaml` (nginx sur 8080, réponse JSON) |
 | Équilibrage | Load Balancer interne Standard `lbi-st<NN>-api`, frontal statique `10.<OCT>.5.100` zone-redondant, TCP 8080, sonde HTTP `/` |
 | Mise à l'échelle | `as-st<NN>-api` : 2 à 4 instances ; +1 si CPU moyen > 70 % sur 5 min ; -1 si < 25 % sur 10 min |
@@ -383,7 +386,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 1. **Nom public du portail** : mettre à jour l'enregistrement `www` de la zone publique `arveo-st<NN>.fr` (module 4), qui pointe encore vers l'IP du pare-feu supprimé, pour qu'il désigne `pip-st<NN>-lbe-web`. Vérifier la résolution avec `nslookup www.arveo-st<NN>.fr <SERVEUR_DE_NOMS_AZURE>`.
 2. **Connexion Entra ID** : installer l'extension `AADSSHLoginForLinux` sur `web02`, attribuer à son propre compte le rôle « Connexion administrateur aux machines virtuelles » sur `rg-st<NN>-app`, puis se connecter par Bastion avec l'authentification Microsoft Entra ID `[À VÉRIFIER]` prise en charge par la SKU Basic. Comparer la traçabilité avec le compte local `arveoadmin`.
 3. **Groupe à haute disponibilité** : tenter de créer `vm-st<NN>-test-as` dans un groupe `avail-st<NN>-web` AVEC `--zone 1`. Interpréter l'erreur. Supprimer immédiatement toute ressource créée.
-4. **Mise à l'échelle sous charge** : sur une instance de l'API, lancer `timeout 900 yes > /dev/null &` (deux fois, une par vCPU si `B2s_v2`) et observer l'historique de mise à l'échelle (`az monitor activity-log list --resource-group rg-st<NN>-app --offset 30m`). Expliquer pourquoi une seule instance chargée ne suffit pas toujours à déclencher l'augmentation.
+4. **Mise à l'échelle sous charge** : sur une instance de l'API, lancer `timeout 900 yes > /dev/null &` (deux fois, une par vCPU pour une taille à 2 vCPU) et observer l'historique de mise à l'échelle (`az monitor activity-log list --resource-group rg-st<NN>-app --offset 30m`). Expliquer pourquoi une seule instance chargée ne suffit pas toujours à déclencher l'augmentation.
 
 ## Nettoyage
 - **Fin du jour 3 (16:55)** :
@@ -393,4 +396,4 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
   Le script supprime Bastion et son IP publique (5 à 10 min), désactive la mise à l'échelle automatique et désalloue les VMs web et les instances de l'API. Relançable sans risque si la session Cloud Shell se ferme.
 - Conservés pour le jour 4 : VMs (désallouées) et disques, Load Balancers, passerelle NAT, NSG, extensions, règle de collecte (modules 8 à 10) ; socle du module 3 inchangé.
 - Bonus 3 : supprimer `vm-st<NN>-test-as`, ses disques et `avail-st<NN>-web` s'ils ont été créés.
-- Coûts : Bastion Basic et IP publiques facturés à l'heure ; passerelle NAT à l'heure et au Go traité ; Load Balancer Standard selon les règles et les données traitées ; VMs B2s_v2/B2s_v2 à l'heure (désallouées : disques seuls) ; Log Analytics au Go ingéré `[À VÉRIFIER]` calculatrice de prix Azure.
+- Coûts : Bastion Basic et IP publiques facturés à l'heure ; passerelle NAT à l'heure et au Go traité ; Load Balancer Standard selon les règles et les données traitées ; VMs à l'heure (désallouées : disques seuls) ; Log Analytics au Go ingéré `[À VÉRIFIER]` calculatrice de prix Azure.

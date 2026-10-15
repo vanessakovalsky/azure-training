@@ -101,7 +101,7 @@ for R in app lyon; do
   az policy assignment create --name "pa-${ST}-vmsku-${R}" \
     --display-name "Arveo ${ST} - Allowed VM sizes (${R})" \
     --policy "$DEF_SKU" --resource-group "rg-${ST}-${R}" \
-    --params '{"listOfAllowedSKUs":{"value":["Standard_B2s_v2","Standard_F1als_v7","Standard_F1alds_v7","Standard_D2as_v6","Standard_D2s_v6"]}}' \
+    --params '{"listOfAllowedSKUs":{"value":["Standard_B2s_v2","Standard_F1als_v7","Standard_F1alds_v7","Standard_D2as_v6","Standard_D2s_v6","Standard_D2als_v7","Standard_D2as_v7","Standard_D2s_v7"]}}' \
     --output none
 done
 ```

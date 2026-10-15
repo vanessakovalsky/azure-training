@@ -23,6 +23,7 @@ Mandatory tags on every resource (module 2 policy): `Projet=Arveo`, `Environneme
 NN=<NN>
 OCT=$((10#$NN))
 ST="st${NN}"
+if [[ "$NN" == "01" ]]; then SIZE=Standard_D2s_v7; elif (( OCT <= 6 )); then SIZE=Standard_D2als_v7; else SIZE=Standard_D2as_v7; fi   # size depends on the number (session quotas)
 RG_HUB="rg-${ST}-hub"
 RG_SPOKE="rg-${ST}-spoke"
 RG_APP="rg-${ST}-app"
@@ -65,12 +66,12 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ### Steps
 1. For each workload, propose: family and size, disk type, pricing option.
-2. For workload 1, check that the chosen size is available in the three France Central zones:
+2. Check in which France Central zones the session size is available to the subscription:
    ```bash
-   az vm list-skus -l francecentral --size Standard_B2s_v2 --resource-type virtualMachines \
-     --query "[].{Size:name, Zones:join(',', locationInfo[0].zones)}" -o table
+   az vm list-skus -l francecentral --size "$SIZE" --resource-type virtualMachines \
+     --query "[?name=='${SIZE}'].{Size:name, Zones:join(',', locationInfo[0].zones), Restrictions:join(',', restrictions[].restrictionInfo.zones[])}" -o table
    ```
-   Expected result: a `Standard_B2s_v2` line with zones `1,2,3` (order may vary).
+   Expected result: zones `1,2,3`, restriction `3` for the training subscription → usable zones: 1 and 2 (hence `web01` in zone 1, `web02` in zone 2, VMSS in zones 1 and 2).
 3. Note the regional vCPU quota of the shared subscription:
    ```bash
    Q="[?name.value=='cores' || name.value=='standardBSv2Family']"
@@ -140,7 +141,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    az network nic create -g "$RG_APP" -n "nic-${ST}-web01" -l "$LOC" --subnet "$SNET_WEB" \
      --private-ip-address "10.${OCT}.4.11" --tags $TAGS -o none
    az vm create -g "$RG_APP" -n "vm-${ST}-web01" -l "$LOC" --zone 1 --nics "nic-${ST}-web01" \
-     --image Ubuntu2404 --size Standard_B2s_v2 \
+     --image Ubuntu2404 --size "$SIZE" \
      --os-disk-name "osdisk-${ST}-web01" --storage-sku StandardSSD_LRS \
      --admin-username arveoadmin --authentication-type password \
      --admin-password "$ADMIN_PW" \
@@ -248,6 +249,8 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 **Context** : Arvéo customers reach the portal through a single public address. Losing one server, or a whole France Central zone, must not interrupt the service.
 **Prerequisites** : `vm-st<NN>-web01` (zone 1) and `vm-st<NN>-web02` (zone 2) running.
 
+> ⚠️ **October 2026 session (quota)**: `web02` only exists on `st01`. Backend pool `bp-web` has a single member (`web01`); cross-zone failover is demonstrated by the trainer on `st01`.
+
 **Assignment** :
 1. In `rg-st<NN>-app`, create the zone-redundant public IP `pip-st<NN>-lbe-web` and the Standard Load Balancer `lbe-st<NN>-web` (frontend `fe-web`, pool `bp-web`).
 2. Create probe `hp-http` (HTTP, port 80, path `/`) and rule `rule-http` (TCP 80 → 80) WITHOUT outbound SNAT.
@@ -285,7 +288,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 | Element | Requirement |
 |---|---|
-| Instances | Flexible VMSS `vmss-st<NN>-api`, `Standard_B2s_v2`, Ubuntu 24.04, zones 1, 2 and 3, in `snet-app` |
+| Instances | Flexible VMSS `vmss-st<NN>-api`, size `$SIZE`, Ubuntu 24.04, zones 1 and 2, in `snet-app` |
 | Configuration | `scripts/labs/module-07/cloud-init-api.yaml` (nginx on 8080, JSON response) |
 | Load balancing | Internal Standard Load Balancer `lbi-st<NN>-api`, static zone-redundant frontend `10.<OCT>.5.100`, TCP 8080, HTTP probe `/` |
 | Autoscale | `as-st<NN>-api`: 2 to 4 instances; +1 if average CPU > 70 % over 5 min; -1 if < 25 % over 10 min |
@@ -383,7 +386,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 1. **Public name of the portal**: update record `www` of public zone `arveo-st<NN>.fr` (module 4), which still points to the IP of the deleted firewall, so that it designates `pip-st<NN>-lbe-web`. Check the resolution with `nslookup www.arveo-st<NN>.fr <AZURE_NAME_SERVER>`.
 2. **Entra ID sign-in**: install extension `AADSSHLoginForLinux` on `web02`, assign your own account the "Virtual Machine Administrator Login" role on `rg-st<NN>-app`, then connect through Bastion with Microsoft Entra ID authentication `[TO VERIFY]` support by the Basic SKU. Compare traceability with the local `arveoadmin` account.
 3. **Availability set**: try to create `vm-st<NN>-test-as` in a set `avail-st<NN>-web` WITH `--zone 1`. Interpret the error. Immediately delete any resource created.
-4. **Autoscale under load**: on an API instance, run `timeout 900 yes > /dev/null &` (twice, one per vCPU with `B2s_v2`) and watch the autoscale history (`az monitor activity-log list --resource-group rg-st<NN>-app --offset 30m`). Explain why a single loaded instance is not always enough to trigger the scale-out.
+4. **Autoscale under load**: on an API instance, run `timeout 900 yes > /dev/null &` (twice, one per vCPU for a 2-vCPU size) and watch the autoscale history (`az monitor activity-log list --resource-group rg-st<NN>-app --offset 30m`). Explain why a single loaded instance is not always enough to trigger the scale-out.
 
 ## Cleanup
 - **End of day 3 (16:55)**:
@@ -393,4 +396,4 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
   The script deletes Bastion and its public IP (5 to 10 min), disables autoscale and deallocates the web VMs and the API instances. Safe to rerun if the Cloud Shell session closes.
 - Kept for day 4: VMs (deallocated) and disks, Load Balancers, NAT gateway, NSG, extensions, data collection rule (modules 8 to 10); module 3 foundation unchanged.
 - Bonus 3: delete `vm-st<NN>-test-as`, its disks and `avail-st<NN>-web` if they were created.
-- Costs: Bastion Basic and public IPs billed hourly; NAT gateway per hour and per processed GB; Standard Load Balancer per rule and processed data; B2s_v2/B2s_v2 VMs per hour (deallocated: disks only); Log Analytics per ingested GB `[TO VERIFY]` Azure pricing calculator.
+- Costs: Bastion Basic and public IPs billed hourly; NAT gateway per hour and per processed GB; Standard Load Balancer per rule and processed data; VMs per hour (deallocated: disks only); Log Analytics per ingested GB `[TO VERIFY]` Azure pricing calculator.
