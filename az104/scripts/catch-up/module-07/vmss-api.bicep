@@ -2,7 +2,7 @@
 // Déployé dans rg-stNN-app :
 //   - nsg-stNN-app : filtrage de snet-app (association au sous-réseau par CLI, cf. deploy.sh) ;
 //   - lbi-stNN-api : Load Balancer interne Standard, frontal 10.NN.5.100 zone-redondant, TCP 8080 ;
-//   - vmss-stNN-api : groupe identique (VMSS) Flexible, zones 1 et 2 (zone 3 refusée pour les tailles v7 de l'abonnement de formation), 2 instances ;
+//   - vmss-stNN-api : groupe identique (VMSS) Flexible, régional (sans zone : l'abonnement de formation n'a accès qu'à la zone 2), 2 instances ;
 //   - as-stNN-api : mise à l'échelle automatique 2 à 4 instances sur le CPU moyen.
 // Le sous-réseau snet-app (rg-stNN-spoke) n'est PAS redéclaré : un PUT de sous-réseau
 // réécrirait toutes ses propriétés (passerelle NAT, NSG, table de routes).
@@ -18,7 +18,7 @@ param numero string
 param adminPassword string
 
 param location string = resourceGroup().location
-param vmSize string = 'Standard_D2as_v7'
+param vmSize string = 'Standard_B2s_v2'
 param adminUsername string = 'arveoadmin'
 
 @minValue(1)
@@ -120,6 +120,7 @@ resource ilb 'Microsoft.Network/loadBalancers@2023-11-01' = {
         zones: [
           '1'
           '2'
+          '3'
         ]
         properties: {
           subnet: {
@@ -176,10 +177,7 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2024-03-01' = {
   name: 'vmss-${prefix}-api'
   location: location
   tags: tags
-  zones: [
-    '1'
-    '2'
-  ]
+  // sans zone : l'abonnement de formation n'a accès qu'à la zone 2 (restrictions des tailles)
   sku: {
     name: vmSize
     tier: 'Standard'

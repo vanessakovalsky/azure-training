@@ -1,7 +1,7 @@
 // main.bicep — rattrapage module 07 : machines virtuelles Arvéo, déployé dans rg-stNN-app
 // État obtenu = fin du module 7 (hors Bastion, passerelle NAT, espace de travail et
 // associations de sous-réseaux, créés par deploy.sh) :
-//   lbe-stNN-web + vm-stNN-web01 (zone 1, disque de données) + vm-stNN-web02 (zone 2),
+//   lbe-stNN-web + vm-stNN-web01 (zone 2, disque de données) + vm-stNN-web02 (sans zone),
 //   lbi-stNN-api + vmss-stNN-api + as-stNN-api, extensions Custom Script (portail v2)
 //   et agent Azure Monitor, règle de collecte dcr-stNN-linux.
 targetScope = 'resourceGroup'
@@ -30,9 +30,9 @@ param diagStorageName string = ''
 param location string = resourceGroup().location
 
 @description('Taille des VMs web et des instances du VMSS (quota : voir deploy.sh)')
-param vmSize string = 'Standard_D2as_v7'
+param vmSize string = 'Standard_B2s_v2'
 
-@description('false = web01 seule (quota insuffisant pour web02 et le VMSS)')
+@description('false = web01 seule (sans web02 ni VMSS)')
 param includeWeb02 bool = true
 
 var prefix = 'st${numero}'
@@ -40,14 +40,14 @@ var octet = int(numero)
 var websAll = [
   {
     nomCourt: 'web01'
-    zone: '1'
+    zone: '2'
     hostOctet: 11
     dataDiskSizeGB: 32
     deploy: deployWeb01
   }
   {
     nomCourt: 'web02'
-    zone: '2'
+    zone: ''
     hostOctet: 12
     dataDiskSizeGB: 0
     deploy: deployWeb02

@@ -15,12 +15,13 @@ param numero string
 @description('Nom court de la VM (ex. web02)')
 param nomCourt string
 
-@description('Zone de disponibilité')
 @allowed([
+  ''
   '1'
   '2'
   '3'
 ])
+@description('Zone de disponibilité ; vide = VM régionale (sans zone)')
 param zone string
 
 @description('Dernier octet de l\'IP privée dans snet-web (ex. 12 pour 10.NN.4.12)')
@@ -43,7 +44,7 @@ param dataDiskSizeGB int = 0
 param diagStorageName string = 'starveost${numero}diag'
 
 param location string = resourceGroup().location
-param vmSize string = 'Standard_D2as_v7'
+param vmSize string = 'Standard_B2s_v2'
 param adminUsername string = 'arveoadmin'
 
 var prefix = 'st${numero}'
@@ -87,7 +88,7 @@ resource dataDisk 'Microsoft.Compute/disks@2023-10-02' = if (dataDiskSizeGB > 0)
   name: 'disk-${prefix}-${nomCourt}-data'
   location: location
   tags: tags
-  zones: [
+  zones: empty(zone) ? [] : [
     zone
   ]
   sku: {
@@ -105,7 +106,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2024-03-01' = {
   name: vmName
   location: location
   tags: tags
-  zones: [
+  zones: empty(zone) ? [] : [
     zone
   ]
   identity: {

@@ -1,13 +1,13 @@
 # Module 07 — Exercises
 
-Common thread: **servers of the Arvéo customer portal and parcel-tracking API**. The web portal runs on two VMs spread across two zones behind a public Load Balancer; the API runs in a Flexible virtual machine scale set (VMSS) behind an internal Load Balancer. No VM has a public IP: administration through Azure Bastion from the hub, Internet egress through a NAT gateway. The web VMs are monitored by the Azure Monitor agent (data used in module 10) and backed up in module 9.
+Common thread: **servers of the Arvéo customer portal and parcel-tracking API**. The web portal runs on two VMs behind a public Load Balancer; the API runs in a Flexible virtual machine scale set (VMSS) behind an internal Load Balancer. No VM has a public IP: administration through Azure Bastion from the hub, Internet egress through a NAT gateway. The web VMs are monitored by the Azure Monitor agent (data used in module 10) and backed up in module 9.
 
 | Resource | Name (trainee 07) | Group | Lab |
 |---|---|---|---|
 | Bastion and its public IP | `bas-st07-hub`, `pip-st07-bastion` | `rg-st07-hub` | 07.2 (script) |
 | NAT gateway | `ng-st07-app`, `pip-st07-natgw` (on `snet-web` and `snet-app`) | `rg-st07-spoke` | 07.2 |
-| Web server 1 (zone 1) | `vm-st07-web01`, `nic-st07-web01` (`10.7.4.11`), `disk-st07-web01-data` | `rg-st07-app` | 07.2 |
-| Web server 2 (zone 2) | `vm-st07-web02`, `nic-st07-web02` (`10.7.4.12`) | `rg-st07-app` | 07.3 |
+| Web server 1 (zone 2) | `vm-st07-web01`, `nic-st07-web01` (`10.7.4.11`), `disk-st07-web01-data` | `rg-st07-app` | 07.2 |
+| Web server 2 (no zone) | `vm-st07-web02`, `nic-st07-web02` (`10.7.4.12`) | `rg-st07-app` | 07.3 |
 | Public Load Balancer | `lbe-st07-web`, `pip-st07-lbe-web`, pool `bp-web` | `rg-st07-app` | 07.4 |
 | API | `vmss-st07-api`, `lbi-st07-api` (`10.7.5.100`), `nsg-st07-app`, `as-st07-api` | `rg-st07-app` | 07.5 |
 | Monitoring | `log-st07-shared` (module 3, `rg-st07-shared`), `dcr-st07-linux` | shared / app | 07.7 |
@@ -23,7 +23,7 @@ Mandatory tags on every resource (module 2 policy): `Projet=Arveo`, `Environneme
 NN=<NN>
 OCT=$((10#$NN))
 ST="st${NN}"
-if [[ "$NN" == "01" ]]; then SIZE=Standard_D2s_v7; elif (( OCT <= 6 )); then SIZE=Standard_D2als_v7; else SIZE=Standard_D2as_v7; fi   # size depends on the number (session quotas)
+SIZE="Standard_B2s_v2"
 RG_HUB="rg-${ST}-hub"
 RG_SPOKE="rg-${ST}-spoke"
 RG_APP="rg-${ST}-app"
@@ -71,7 +71,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    az vm list-skus -l francecentral --size "$SIZE" --resource-type virtualMachines \
      --query "[?name=='${SIZE}'].{Size:name, Zones:join(',', locationInfo[0].zones), Restrictions:join(',', restrictions[].restrictionInfo.zones[])}" -o table
    ```
-   Expected result: zones `1,2,3`, restriction `3` for the training subscription → usable zones: 1 and 2 (hence `web01` in zone 1, `web02` in zone 2, VMSS in zones 1 and 2).
+   Expected result: zones `1,2,3`, restrictions `1,3` for the training subscription → only zone 2 is usable. Hence `web01` in zone 2, `web02` and the VMSS without a zone (regional placement). A real-life situation: zone restrictions depend on the subscription and must be checked before any zonal design.
 3. Note the regional vCPU quota of the shared subscription:
    ```bash
    Q="[?name.value=='cores' || name.value=='standardBSv2Family']"
@@ -90,7 +90,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ## Lab 07.2 ⭐ — First VM without a public IP, access through Bastion (guided)
 **Duration** : 25 min · **Objective** : deploy a VM without a public IP through the CLI, then manage it through Azure Bastion (objective 8)
-**Context** : the first Arvéo customer portal server is deployed in zone 1. Security requires: no public IP on servers, administration through a single entry point in the hub, Internet egress controlled by a fixed IP (declared to the transport partners).
+**Context** : the first Arvéo customer portal server is deployed in zone 2. Security requires: no public IP on servers, administration through a single entry point in the hub, Internet egress controlled by a fixed IP (declared to the transport partners).
 **Prerequisites** : variable block run; M4 spokes present.
 
 ### Steps
@@ -134,13 +134,13 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    echo "${#ADMIN_PW} characters"
    ```
    Expected result: `23 characters`.
-4. Create the NIC (fixed IP) then the VM in zone 1, without a public IP, configured by cloud-init, with boot diagnostics in the module 3 account:
+4. Create the NIC (fixed IP) then the VM in zone 2, without a public IP, configured by cloud-init, with boot diagnostics in the module 3 account:
    ```bash
    SNET_WEB=$(az network vnet subnet show -g "$RG_SPOKE" --vnet-name "vnet-${ST}-spoke-app" \
      -n snet-web --query id -o tsv)
    az network nic create -g "$RG_APP" -n "nic-${ST}-web01" -l "$LOC" --subnet "$SNET_WEB" \
      --private-ip-address "10.${OCT}.4.11" --tags $TAGS -o none
-   az vm create -g "$RG_APP" -n "vm-${ST}-web01" -l "$LOC" --zone 1 --nics "nic-${ST}-web01" \
+   az vm create -g "$RG_APP" -n "vm-${ST}-web01" -l "$LOC" --zone 2 --nics "nic-${ST}-web01" \
      --image Ubuntu2404 --size "$SIZE" \
      --os-disk-name "osdisk-${ST}-web01" --storage-sku StandardSSD_LRS \
      --admin-username arveoadmin --authentication-type password \
@@ -153,7 +153,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    ```
    State       IP         Zone
    ----------  ---------  ------
-   VM running  10.7.4.11  1
+   VM running  10.7.4.11  2
    ```
 5. Wait for cloud-init to finish, then check the web page and the egress IP:
    ```bash
@@ -162,14 +162,14 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    ```
    Expected result (1 to 3 min):
    ```
-   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 1</p>
+   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 2</p>
    <NAT_IP>
    <NAT_IP>
    ```
    The same address appears twice: the VM goes out through the NAT gateway. (The page text is in French: "customer portal", "server".)
 6. Create a 32 GiB data disk in the VM's zone, attach it to LUN 0, then format it and mount it on `/srv/arveo`:
    ```bash
-   az disk create -g "$RG_APP" -n "disk-${ST}-web01-data" -l "$LOC" --zone 1 \
+   az disk create -g "$RG_APP" -n "disk-${ST}-web01-data" -l "$LOC" --zone 2 \
      --size-gb 32 --sku StandardSSD_LRS --tags $TAGS -o none
    az vm disk attach -g "$RG_APP" --vm-name "vm-${ST}-web01" \
      --name "disk-${ST}-web01-data" --lun 0 --caching ReadOnly -o none
@@ -187,7 +187,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    ```
    vm-st07-web01
    /dev/sdc1        32G   24K   30G   1% /srv/arveo
-   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 1</p>
+   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 2</p>
    ```
 8. List the resources created by `az vm create` and check that no public IP and no NSG was created implicitly:
    ```bash
@@ -201,7 +201,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    Expected result: `https://starveost07diag.blob.core.windows.net/`.
 
 ### Success criteria
-- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web01 -d --query "[zones[0], publicIps, privateIps]" -o tsv` shows `1`, an empty value and `10.<OCT>.4.11`.
+- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web01 -d --query "[zones[0], publicIps, privateIps]" -o tsv` shows `2`, an empty value and `10.<OCT>.4.11`.
 - [ ] The egress IP noted in step 5 is that of `pip-st<NN>-natgw`.
 - [ ] `vmrun web01 "findmnt -no SOURCE,TARGET /srv/arveo"` shows a partition mounted on `/srv/arveo`.
 - [ ] Bastion session opened on `vm-st<NN>-web01`.
@@ -210,17 +210,17 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 ---
 
 ## Exercise 07.3 ⭐⭐ 🔸 Optional — Second web server in Bicep (semi-autonomous)
-**Duration** : 15 min · **Objective** : deploy a VM reproducibly with Bicep, in another zone (objective 8)
+**Duration** : 15 min · **Objective** : deploy a VM reproducibly with Bicep, without a zone (objective 8)
 
-> 🔸 **Optional** — Creates: `vm-st<NN>-web02` (zone 2), used in modules 7, 9 and 10. Catch-up (run by everyone in class): `./scripts/catch-up/module-07/deploy.sh <NN>`
-**Context** : the Arvéo operations team wants a single model for every web server, versioned in the Git repository. The second portal server is created in zone 2 from this model.
+> 🔸 **Optional** — Creates: `vm-st<NN>-web02` (no zone), used in modules 7, 9 and 10. Catch-up (run by everyone in class): `./scripts/catch-up/module-07/deploy.sh <NN>`
+**Context** : the Arvéo operations team wants a single model for every web server, versioned in the Git repository. The second portal server is created from this model, without a zone (only zone 2 is available to the subscription, already used by `web01`).
 **Prerequisites** : lab 07.2 completed (NAT gateway, password).
 
 **Assignment** :
 1. Copy `scripts/labs/module-07/vm-web-squelette.bicep` to `scripts/labs/module-07/vm-web.bicep` (same folder, for `loadTextContent`). The file comments are in French; parameter `nomCourt` = short name (e.g. `web02`).
 2. Complete the five `TODO`s: zone, Ubuntu Server 24.04 LTS image, OS disk (`osdisk-st<NN>-<nomCourt>`, Standard SSD LRS, deleted with the VM), custom data `cloud-init-web.yaml`, password authentication.
-3. Build with no error or warning, then preview the deployment of `web02` (zone 2, IP `10.<OCT>.4.12`) with `what-if`. If the module 3 diagnostics account has a suffix, pass `diagStorageName="$DIAG_SA"`.
-4. Deploy, then check the page served by `vm-st<NN>-web02` (zone shown: 2).
+3. Build with no error or warning, then preview the deployment of `web02` (`zone=''`: no zone, IP `10.<OCT>.4.12`) with `what-if`. If the module 3 diagnostics account has a suffix, pass `diagStorageName="$DIAG_SA"`.
+4. Deploy, then check the page served by `vm-st<NN>-web02` (zone shown: aucune).
 5. Rerun `what-if` with the same parameters, then with `zone=3`. Note both results.
 6. Answer in writing:
    - a. Why does the OS disk of `web02` not need a declared zone?
@@ -228,7 +228,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    - c. Change `cloud-init-web.yaml` then redeploy: does the `web02` page change? Why?
 
 **Hints** :
-- Zone property: `zones: [ zone ]` at the same level as `properties`.
+- Zone property: `zones: empty(zone) ? [] : [ zone ]` at the same level as `properties` (empty array = regional VM).
 - Image: `imageReference` object (`publisher`, `offer`, `sku`, `version`).
 - OS disk: `createOption: 'FromImage'`, `deleteOption: 'Delete'`, `managedDisk.storageAccountType`.
 - Custom data: `base64(loadTextContent('cloud-init-web.yaml'))`.
@@ -238,18 +238,16 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 **Success criteria** :
 - [ ] `az bicep build --file scripts/labs/module-07/vm-web.bicep` produces no error and no warning.
-- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web02 --query "[zones[0], storageProfile.osDisk.name]" -o tsv` shows `2` and `osdisk-st<NN>-web02`.
-- [ ] `vmrun web02 "curl -s localhost"` shows `vm-st<NN>-web02 - zone 2`.
+- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web02 --query "[zones[0], storageProfile.osDisk.name]" -o tsv` shows an empty value and `osdisk-st<NN>-web02`.
+- [ ] `vmrun web02 "curl -s localhost"` shows `vm-st<NN>-web02 - zone aucune`.
 - [ ] The step 5 results and the three step 6 answers are written.
 
 ---
 
 ## Lab 07.4 ⭐⭐ — Public Load Balancer and cross-zone failover (semi-autonomous)
 **Duration** : 20 min · **Objective** : make the portal highly available behind a Load Balancer and prove the failover (objective 8)
-**Context** : Arvéo customers reach the portal through a single public address. Losing one server, or a whole France Central zone, must not interrupt the service.
-**Prerequisites** : `vm-st<NN>-web01` (zone 1) and `vm-st<NN>-web02` (zone 2) running.
-
-> ⚠️ **October 2026 session (quota)**: `web02` only exists on `st01`. Backend pool `bp-web` has a single member (`web01`); cross-zone failover is demonstrated by the trainer on `st01`.
+**Context** : Arvéo customers reach the portal through a single public address. Losing one server must not interrupt the service (zones: only one available to the subscription, see exercise 07.1).
+**Prerequisites** : `vm-st<NN>-web01` (zone 2) and `vm-st<NN>-web02` (no zone) running.
 
 **Assignment** :
 1. In `rg-st<NN>-app`, create the zone-redundant public IP `pip-st<NN>-lbe-web` and the Standard Load Balancer `lbe-st<NN>-web` (frontend `fe-web`, pool `bp-web`).
@@ -272,14 +270,14 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 **Success criteria** :
 - [ ] `az network lb address-pool show -g rg-st<NN>-app --lb-name lbe-st<NN>-web -n bp-web --query "length(backendIPConfigurations)"` returns `2`.
-- [ ] Step 4 shows responses from BOTH servers (zones 1 and 2).
+- [ ] Step 4 shows responses from BOTH servers (`web01` and `web02`).
 - [ ] During the failure, 10 requests out of 10 are served by `web02`, with no error.
 - [ ] The three step 6 answers are written.
 
 ---
 
 ## Challenge 07.5 ⭐⭐⭐ 🔸 Optional — Parcel-tracking API on a VMSS (autonomous)
-**Duration** : 30 min · **Objective** : deploy a zone-redundant scale set with autoscale behind an internal Load Balancer (objective 8)
+**Duration** : 30 min · **Objective** : deploy a scale set with autoscale behind an internal Load Balancer (objective 8)
 
 > 🔸 **Optional** — Creates: VMSS `vmss-st<NN>-api` and internal Load Balancer `lbi-st<NN>-api`. Catch-up: `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Context** : the parcel-tracking API is called by the portal (and tomorrow by the drivers' mobile apps). Its load varies strongly with delivery times. The API must never be exposed to the Internet: only the portal (`snet-web`) may call it, and administration goes through Bastion.
@@ -288,7 +286,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 | Element | Requirement |
 |---|---|
-| Instances | Flexible VMSS `vmss-st<NN>-api`, size `$SIZE`, Ubuntu 24.04, zones 1 and 2, in `snet-app` |
+| Instances | Flexible VMSS `vmss-st<NN>-api`, size `$SIZE`, Ubuntu 24.04, no zone (subscription limited to zone 2), in `snet-app` |
 | Configuration | `scripts/labs/module-07/cloud-init-api.yaml` (nginx on 8080, JSON response) |
 | Load balancing | Internal Standard Load Balancer `lbi-st<NN>-api`, static zone-redundant frontend `10.<OCT>.5.100`, TCP 8080, HTTP probe `/` |
 | Autoscale | `as-st<NN>-api`: 2 to 4 instances; +1 if average CPU > 70 % over 5 min; -1 if < 25 % over 10 min |
@@ -298,16 +296,16 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 1. Deploy the whole set, preferably in Bicep (file `vmss-api.bicep` in a personal folder), otherwise with documented CLI. Constraints: no public IP, subnet `snet-app` NOT redeclared in Bicep, NAT gateway kept on `snet-app`.
 2. Prove it works with four tests:
    - a. from `web01`, six calls to `http://10.<OCT>.5.100:8080/`: at least two different instances respond;
-   - b. the instances are spread across at least two zones;
+   - b. at least two `Running` instances;
    - c. from `web01`, TCP connection to port 22 of an instance: refused or timed out;
    - d. the autoscale profile shows min 2, max 4 and two rules.
 3. Answer in writing:
    - a. Why Flexible rather than Uniform orchestration here?
-   - b. What happens to the API if France Central zone 1 is lost? And if the minimum were 1?
+   - b. What happens to the API if one instance is lost? And if the minimum were 1? What would a VMSS in zones 1, 2 and 3 bring on a subscription without restrictions?
    - c. Why associate the NSG and the NAT gateway with the subnet through the CLI rather than redeclaring `snet-app` in the Bicep file?
 
 **Success criteria** :
-- [ ] `az vmss show -g rg-st<NN>-app -n vmss-st<NN>-api --query "[orchestrationMode, zones]" -o json` shows `Flexible` and the three zones.
+- [ ] `az vmss show -g rg-st<NN>-app -n vmss-st<NN>-api --query "[orchestrationMode, zones]" -o json` shows `Flexible` and `null` (no zone).
 - [ ] The four tests give the expected result.
 - [ ] `az network vnet subnet show -g rg-st<NN>-spoke --vnet-name vnet-st<NN>-spoke-app -n snet-app --query "[natGateway.id, networkSecurityGroup.id]" -o tsv` returns `ng-st<NN>-app` and `nsg-st<NN>-app`.
 - [ ] Redeploying the same file: `what-if` with no change on the VMSS or the Load Balancer.
@@ -385,7 +383,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 ## Bonus 🚀
 1. **Public name of the portal**: update record `www` of public zone `arveo-st<NN>.fr` (module 4), which still points to the IP of the deleted firewall, so that it designates `pip-st<NN>-lbe-web`. Check the resolution with `nslookup www.arveo-st<NN>.fr <AZURE_NAME_SERVER>`.
 2. **Entra ID sign-in**: install extension `AADSSHLoginForLinux` on `web02`, assign your own account the "Virtual Machine Administrator Login" role on `rg-st<NN>-app`, then connect through Bastion with Microsoft Entra ID authentication `[TO VERIFY]` support by the Basic SKU. Compare traceability with the local `arveoadmin` account.
-3. **Availability set**: try to create `vm-st<NN>-test-as` in a set `avail-st<NN>-web` WITH `--zone 1`. Interpret the error. Immediately delete any resource created.
+3. **Availability set**: try to create `vm-st<NN>-test-as` in a set `avail-st<NN>-web` WITH `--zone 2`. Interpret the error. Immediately delete any resource created.
 4. **Autoscale under load**: on an API instance, run `timeout 900 yes > /dev/null &` (twice, one per vCPU for a 2-vCPU size) and watch the autoscale history (`az monitor activity-log list --resource-group rg-st<NN>-app --offset 30m`). Explain why a single loaded instance is not always enough to trigger the scale-out.
 
 ## Cleanup

@@ -1,13 +1,13 @@
 # Module 07 — Exercices
 
-Fil rouge : **serveurs du portail client et de l'API de suivi des colis d'Arvéo**. Le portail web tourne sur deux VMs réparties dans deux zones derrière un Load Balancer public ; l'API tourne dans un groupe identique (VMSS) Flexible derrière un Load Balancer interne. Aucune VM n'a d'IP publique : administration par Azure Bastion depuis le hub, sortie Internet par une passerelle NAT. Les VMs web sont supervisées par l'agent Azure Monitor (données exploitées au module 10) et sauvegardées au module 9.
+Fil rouge : **serveurs du portail client et de l'API de suivi des colis d'Arvéo**. Le portail web tourne sur deux VMs derrière un Load Balancer public ; l'API tourne dans un groupe identique (VMSS) Flexible derrière un Load Balancer interne. Aucune VM n'a d'IP publique : administration par Azure Bastion depuis le hub, sortie Internet par une passerelle NAT. Les VMs web sont supervisées par l'agent Azure Monitor (données exploitées au module 10) et sauvegardées au module 9.
 
 | Ressource | Nom (stagiaire 07) | Groupe | Lab |
 |---|---|---|---|
 | Bastion et son IP publique | `bas-st07-hub`, `pip-st07-bastion` | `rg-st07-hub` | 07.2 (script) |
 | Passerelle NAT | `ng-st07-app`, `pip-st07-natgw` (sur `snet-web` et `snet-app`) | `rg-st07-spoke` | 07.2 |
-| Serveur web 1 (zone 1) | `vm-st07-web01`, `nic-st07-web01` (`10.7.4.11`), `disk-st07-web01-data` | `rg-st07-app` | 07.2 |
-| Serveur web 2 (zone 2) | `vm-st07-web02`, `nic-st07-web02` (`10.7.4.12`) | `rg-st07-app` | 07.3 |
+| Serveur web 1 (zone 2) | `vm-st07-web01`, `nic-st07-web01` (`10.7.4.11`), `disk-st07-web01-data` | `rg-st07-app` | 07.2 |
+| Serveur web 2 (sans zone) | `vm-st07-web02`, `nic-st07-web02` (`10.7.4.12`) | `rg-st07-app` | 07.3 |
 | Load Balancer public | `lbe-st07-web`, `pip-st07-lbe-web`, pool `bp-web` | `rg-st07-app` | 07.4 |
 | API | `vmss-st07-api`, `lbi-st07-api` (`10.7.5.100`), `nsg-st07-app`, `as-st07-api` | `rg-st07-app` | 07.5 |
 | Supervision | `log-st07-shared` (`rg-st07-shared`), `dcr-st07-linux` | shared / app | 07.7 |
@@ -23,7 +23,7 @@ Tags obligatoires sur chaque ressource (stratégie du module 2) : `Projet=Arveo`
 NN=<NN>
 OCT=$((10#$NN))
 ST="st${NN}"
-if [[ "$NN" == "01" ]]; then SIZE=Standard_D2s_v7; elif (( OCT <= 6 )); then SIZE=Standard_D2als_v7; else SIZE=Standard_D2as_v7; fi   # taille selon le numéro (quotas de la session)
+SIZE="Standard_B2s_v2"
 RG_HUB="rg-${ST}-hub"
 RG_SPOKE="rg-${ST}-spoke"
 RG_APP="rg-${ST}-app"
@@ -71,7 +71,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    az vm list-skus -l francecentral --size "$SIZE" --resource-type virtualMachines \
      --query "[?name=='${SIZE}'].{Taille:name, Zones:join(',', locationInfo[0].zones), Restrictions:join(',', restrictions[].restrictionInfo.zones[])}" -o table
    ```
-   Résultat attendu : zones `1,2,3`, restriction `3` pour l'abonnement de formation → zones utilisables : 1 et 2 (d'où `web01` en zone 1, `web02` en zone 2, VMSS en zones 1 et 2).
+   Résultat attendu : zones `1,2,3`, restrictions `1,3` pour l'abonnement de formation → seule la zone 2 est utilisable. D'où `web01` en zone 2, `web02` et le VMSS sans zone (placement régional). Situation réelle en entreprise : les restrictions de zone dépendent de l'abonnement, à vérifier avant toute architecture zonale.
 3. Relever le quota régional de vCPU de l'abonnement partagé :
    ```bash
    Q="[?name.value=='cores' || name.value=='standardBSv2Family']"
@@ -90,7 +90,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 ## Lab 07.2 ⭐ — Première VM sans IP publique, accès par Bastion (guidé)
 **Durée** : 25 min · **Objectif** : déployer une VM sans IP publique par CLI, puis l'administrer par Azure Bastion (objectif 8)
-**Contexte** : le premier serveur du portail client Arvéo est déployé en zone 1. La sécurité impose : aucune IP publique sur les serveurs, administration par un point d'entrée unique dans le hub, sortie Internet contrôlée par une IP fixe (déclarée chez les partenaires de transport).
+**Contexte** : le premier serveur du portail client Arvéo est déployé en zone 2. La sécurité impose : aucune IP publique sur les serveurs, administration par un point d'entrée unique dans le hub, sortie Internet contrôlée par une IP fixe (déclarée chez les partenaires de transport).
 **Prérequis** : bloc de variables exécuté ; spokes du M4 présents.
 
 ### Étapes
@@ -134,13 +134,13 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    echo "${#ADMIN_PW} caractères"
    ```
    Résultat attendu : `23 caractères`.
-4. Créer la carte réseau (IP fixe) puis la VM en zone 1, sans IP publique, configurée par cloud-init :
+4. Créer la carte réseau (IP fixe) puis la VM en zone 2, sans IP publique, configurée par cloud-init :
    ```bash
    SNET_WEB=$(az network vnet subnet show -g "$RG_SPOKE" --vnet-name "vnet-${ST}-spoke-app" \
      -n snet-web --query id -o tsv)
    az network nic create -g "$RG_APP" -n "nic-${ST}-web01" -l "$LOC" --subnet "$SNET_WEB" \
      --private-ip-address "10.${OCT}.4.11" --tags $TAGS -o none
-   az vm create -g "$RG_APP" -n "vm-${ST}-web01" -l "$LOC" --zone 1 --nics "nic-${ST}-web01" \
+   az vm create -g "$RG_APP" -n "vm-${ST}-web01" -l "$LOC" --zone 2 --nics "nic-${ST}-web01" \
      --image Ubuntu2404 --size "$SIZE" \
      --os-disk-name "osdisk-${ST}-web01" --storage-sku StandardSSD_LRS \
      --admin-username arveoadmin --authentication-type password \
@@ -153,7 +153,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    ```
    Etat        IP         Zone
    ----------  ---------  ------
-   VM running  10.7.4.11  1
+   VM running  10.7.4.11  2
    ```
 5. Attendre la fin de cloud-init, puis vérifier la page web et l'IP de sortie :
    ```bash
@@ -162,14 +162,14 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    ```
    Résultat attendu (1 à 3 min) :
    ```
-   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 1</p>
+   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 2</p>
    <IP_NAT>
    <IP_NAT>
    ```
    La même adresse apparaît deux fois : la VM sort par la passerelle NAT.
 6. Créer un disque de données de 32 Gio dans la zone de la VM, l'attacher au LUN 0, puis le formater et le monter sur `/srv/arveo` :
    ```bash
-   az disk create -g "$RG_APP" -n "disk-${ST}-web01-data" -l "$LOC" --zone 1 \
+   az disk create -g "$RG_APP" -n "disk-${ST}-web01-data" -l "$LOC" --zone 2 \
      --size-gb 32 --sku StandardSSD_LRS --tags $TAGS -o none
    az vm disk attach -g "$RG_APP" --vm-name "vm-${ST}-web01" \
      --name "disk-${ST}-web01-data" --lun 0 --caching ReadOnly -o none
@@ -187,7 +187,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    ```
    vm-st07-web01
    /dev/sdc1        32G   24K   30G   1% /srv/arveo
-   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 1</p>
+   <h1>Arveo - portail client v1</h1><p>Serveur : vm-st07-web01 - zone 2</p>
    ```
 8. Lister les ressources créées par `az vm create` et vérifier qu'aucune IP publique ni aucun NSG n'a été créé implicitement :
    ```bash
@@ -201,7 +201,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    Résultat attendu : `https://starveost07diag.blob.core.windows.net/`.
 
 ### Critères de réussite
-- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web01 -d --query "[zones[0], publicIps, privateIps]" -o tsv` affiche `1`, une valeur vide et `10.<OCT>.4.11`.
+- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web01 -d --query "[zones[0], publicIps, privateIps]" -o tsv` affiche `2`, une valeur vide et `10.<OCT>.4.11`.
 - [ ] L'IP de sortie relevée à l'étape 5 est celle de `pip-st<NN>-natgw`.
 - [ ] `vmrun web01 "findmnt -no SOURCE,TARGET /srv/arveo"` affiche une partition montée sur `/srv/arveo`.
 - [ ] Session Bastion ouverte sur `vm-st<NN>-web01`.
@@ -210,17 +210,17 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 ---
 
 ## Exercice 07.3 ⭐⭐ 🔸 Optionnel — Deuxième serveur web en Bicep (semi-autonome)
-**Durée** : 15 min · **Objectif** : déployer une VM de façon reproductible par Bicep, dans une autre zone (objectif 8)
+**Durée** : 15 min · **Objectif** : déployer une VM de façon reproductible par Bicep, sans zone (objectif 8)
 
-> 🔸 **Optionnel** — Crée : `vm-st<NN>-web02` (zone 2), utilisée aux modules 7, 9 et 10. Rattrapage (lancé par tous en séance) : `./scripts/catch-up/module-07/deploy.sh <NN>`
-**Contexte** : l'équipe d'exploitation d'Arvéo veut un modèle unique pour tous les serveurs web, versionné dans le dépôt Git. Le second serveur du portail est créé en zone 2 à partir de ce modèle.
+> 🔸 **Optionnel** — Crée : `vm-st<NN>-web02` (sans zone), utilisée aux modules 7, 9 et 10. Rattrapage (lancé par tous en séance) : `./scripts/catch-up/module-07/deploy.sh <NN>`
+**Contexte** : l'équipe d'exploitation d'Arvéo veut un modèle unique pour tous les serveurs web, versionné dans le dépôt Git. Le second serveur du portail est créé à partir de ce modèle, sans zone (seule la zone 2 est disponible pour l'abonnement, déjà occupée par `web01`).
 **Prérequis** : lab 07.2 terminé (passerelle NAT, mot de passe).
 
 **Énoncé** :
 1. Copier `scripts/labs/module-07/vm-web-squelette.bicep` en `scripts/labs/module-07/vm-web.bicep` (même dossier, pour `loadTextContent`).
 2. Compléter les cinq `TODO` : zone, image Ubuntu Server 24.04 LTS, disque OS (`osdisk-st<NN>-<nomCourt>`, SSD Standard LRS, supprimé avec la VM), données personnalisées `cloud-init-web.yaml`, authentification par mot de passe.
-3. Compiler sans erreur ni avertissement, puis prévisualiser le déploiement de `web02` (zone 2, IP `10.<OCT>.4.12`) avec `what-if`. Si le compte de diagnostic du module 3 porte un suffixe, passer `diagStorageName="$DIAG_SA"`.
-4. Déployer, puis vérifier la page servie par `vm-st<NN>-web02` (zone affichée : 2).
+3. Compiler sans erreur ni avertissement, puis prévisualiser le déploiement de `web02` (`zone=''` : sans zone, IP `10.<OCT>.4.12`) avec `what-if`. Si le compte de diagnostic du module 3 porte un suffixe, passer `diagStorageName="$DIAG_SA"`.
+4. Déployer, puis vérifier la page servie par `vm-st<NN>-web02` (zone affichée : aucune).
 5. Relancer `what-if` avec les mêmes paramètres, puis avec `zone=3`. Relever les deux résultats.
 6. Répondre par écrit :
    - a. Pourquoi le disque OS de `web02` n'a-t-il pas besoin d'une zone déclarée ?
@@ -228,7 +228,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
    - c. Modifier `cloud-init-web.yaml` puis redéployer : la page de `web02` change-t-elle ? Pourquoi ?
 
 **Indices** :
-- Propriété de zone : `zones: [ zone ]` au même niveau que `properties`.
+- Propriété de zone : `zones: empty(zone) ? [] : [ zone ]` au même niveau que `properties` (tableau vide = VM régionale).
 - Image : objet `imageReference` (`publisher`, `offer`, `sku`, `version`).
 - Disque OS : `createOption: 'FromImage'`, `deleteOption: 'Delete'`, `managedDisk.storageAccountType`.
 - Données personnalisées : `base64(loadTextContent('cloud-init-web.yaml'))`.
@@ -238,18 +238,16 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 **Critères de réussite** :
 - [ ] `az bicep build --file scripts/labs/module-07/vm-web.bicep` ne produit ni erreur ni avertissement.
-- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web02 --query "[zones[0], storageProfile.osDisk.name]" -o tsv` affiche `2` et `osdisk-st<NN>-web02`.
-- [ ] `vmrun web02 "curl -s localhost"` affiche `vm-st<NN>-web02 - zone 2`.
+- [ ] `az vm show -g rg-st<NN>-app -n vm-st<NN>-web02 --query "[zones[0], storageProfile.osDisk.name]" -o tsv` affiche une valeur vide et `osdisk-st<NN>-web02`.
+- [ ] `vmrun web02 "curl -s localhost"` affiche `vm-st<NN>-web02 - zone aucune`.
 - [ ] Les résultats de l'étape 5 et les trois réponses de l'étape 6 sont rédigés.
 
 ---
 
 ## Lab 07.4 ⭐⭐ — Load Balancer public et bascule entre zones (semi-autonome)
 **Durée** : 20 min · **Objectif** : rendre le portail hautement disponible derrière un Load Balancer et prouver la bascule (objectif 8)
-**Contexte** : les clients d'Arvéo accèdent au portail par une adresse publique unique. La perte d'un serveur, ou d'une zone entière de France Central, ne doit pas interrompre le service.
-**Prérequis** : `vm-st<NN>-web01` (zone 1) et `vm-st<NN>-web02` (zone 2) en fonctionnement.
-
-> ⚠️ **Session d'octobre 2026 (quota)** : `web02` n'existe que sur `st01`. Pool `bp-web` à un seul membre (`web01`) ; bascule entre zones démontrée par la formatrice sur `st01`.
+**Contexte** : les clients d'Arvéo accèdent au portail par une adresse publique unique. La perte d'un serveur ne doit pas interrompre le service (zones : une seule disponible pour l'abonnement, voir exercice 07.1).
+**Prérequis** : `vm-st<NN>-web01` (zone 2) et `vm-st<NN>-web02` (sans zone) en fonctionnement.
 
 **Énoncé** :
 1. Créer dans `rg-st<NN>-app` l'IP publique zone-redondante `pip-st<NN>-lbe-web` et le Load Balancer Standard `lbe-st<NN>-web` (frontal `fe-web`, pool `bp-web`).
@@ -272,14 +270,14 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 **Critères de réussite** :
 - [ ] `az network lb address-pool show -g rg-st<NN>-app --lb-name lbe-st<NN>-web -n bp-web --query "length(backendIPConfigurations)"` renvoie `2`.
-- [ ] L'étape 4 montre des réponses des DEUX serveurs (zones 1 et 2).
+- [ ] L'étape 4 montre des réponses des DEUX serveurs (`web01` et `web02`).
 - [ ] Pendant la panne, 10 requêtes sur 10 sont servies par `web02`, sans erreur.
 - [ ] Les trois réponses de l'étape 6 sont rédigées.
 
 ---
 
 ## Défi 07.5 ⭐⭐⭐ 🔸 Optionnel — API de suivi des colis en VMSS (autonome)
-**Durée** : 30 min · **Objectif** : déployer un groupe identique zone-redondant avec mise à l'échelle automatique derrière un Load Balancer interne (objectif 8)
+**Durée** : 30 min · **Objectif** : déployer un groupe identique avec mise à l'échelle automatique derrière un Load Balancer interne (objectif 8)
 
 > 🔸 **Optionnel** — Crée : VMSS `vmss-st<NN>-api` et Load Balancer interne `lbi-st<NN>-api`. Rattrapage : `./scripts/catch-up/module-07/deploy.sh <NN>`
 **Contexte** : l'API de suivi des colis est appelée par le portail (et demain par les applications mobiles des chauffeurs). Sa charge varie fortement selon l'heure de livraison. L'API ne doit jamais être exposée sur Internet : seul le portail (`snet-web`) peut l'appeler, et l'administration passe par Bastion.
@@ -288,7 +286,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 
 | Élément | Exigence |
 |---|---|
-| Instances | VMSS Flexible `vmss-st<NN>-api`, taille `$SIZE`, Ubuntu 24.04, zones 1 et 2, dans `snet-app` |
+| Instances | VMSS Flexible `vmss-st<NN>-api`, taille `$SIZE`, Ubuntu 24.04, sans zone (abonnement limité à la zone 2), dans `snet-app` |
 | Configuration | `scripts/labs/module-07/cloud-init-api.yaml` (nginx sur 8080, réponse JSON) |
 | Équilibrage | Load Balancer interne Standard `lbi-st<NN>-api`, frontal statique `10.<OCT>.5.100` zone-redondant, TCP 8080, sonde HTTP `/` |
 | Mise à l'échelle | `as-st<NN>-api` : 2 à 4 instances ; +1 si CPU moyen > 70 % sur 5 min ; -1 si < 25 % sur 10 min |
@@ -298,16 +296,16 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 1. Déployer l'ensemble, de préférence en Bicep (fichier `vmss-api.bicep` dans un dossier personnel), sinon en CLI documentée. Contraintes : aucune IP publique, sous-réseau `snet-app` NON redéclaré en Bicep, passerelle NAT conservée sur `snet-app`.
 2. Prouver le fonctionnement par quatre tests :
    - a. depuis `web01`, six appels à `http://10.<OCT>.5.100:8080/` : au moins deux instances différentes répondent ;
-   - b. les instances sont réparties dans au moins deux zones ;
+   - b. au moins deux instances `Running` ;
    - c. depuis `web01`, connexion TCP au port 22 d'une instance : refusée ou expirée ;
    - d. le profil de mise à l'échelle affiche min 2, max 4 et deux règles.
 3. Répondre par écrit :
    - a. Pourquoi l'orchestration Flexible plutôt qu'Uniforme ici ?
-   - b. Que se passe-t-il pour l'API si la zone 1 de France Central est perdue ? Et si le minimum était 1 ?
+   - b. Que se passe-t-il pour l'API si une instance est perdue ? Et si le minimum était 1 ? Qu'apporterait un VMSS en zones 1, 2 et 3 sur un abonnement sans restriction ?
    - c. Pourquoi associer le NSG et la passerelle NAT au sous-réseau par CLI plutôt qu'en redéclarant `snet-app` dans le Bicep ?
 
 **Critères de réussite** :
-- [ ] `az vmss show -g rg-st<NN>-app -n vmss-st<NN>-api --query "[orchestrationMode, zones]" -o json` affiche `Flexible` et les trois zones.
+- [ ] `az vmss show -g rg-st<NN>-app -n vmss-st<NN>-api --query "[orchestrationMode, zones]" -o json` affiche `Flexible` et `null` (aucune zone).
 - [ ] Les quatre tests donnent le résultat attendu.
 - [ ] `az network vnet subnet show -g rg-st<NN>-spoke --vnet-name vnet-st<NN>-spoke-app -n snet-app --query "[natGateway.id, networkSecurityGroup.id]" -o tsv` renvoie `ng-st<NN>-app` et `nsg-st<NN>-app`.
 - [ ] Redéploiement du même fichier : `what-if` sans changement sur le VMSS ni sur le Load Balancer.
@@ -385,7 +383,7 @@ st07 7 rg-st07-app rg-st07-spoke starveost07diag
 ## Bonus 🚀
 1. **Nom public du portail** : mettre à jour l'enregistrement `www` de la zone publique `arveo-st<NN>.fr` (module 4), qui pointe encore vers l'IP du pare-feu supprimé, pour qu'il désigne `pip-st<NN>-lbe-web`. Vérifier la résolution avec `nslookup www.arveo-st<NN>.fr <SERVEUR_DE_NOMS_AZURE>`.
 2. **Connexion Entra ID** : installer l'extension `AADSSHLoginForLinux` sur `web02`, attribuer à son propre compte le rôle « Connexion administrateur aux machines virtuelles » sur `rg-st<NN>-app`, puis se connecter par Bastion avec l'authentification Microsoft Entra ID `[À VÉRIFIER]` prise en charge par la SKU Basic. Comparer la traçabilité avec le compte local `arveoadmin`.
-3. **Groupe à haute disponibilité** : tenter de créer `vm-st<NN>-test-as` dans un groupe `avail-st<NN>-web` AVEC `--zone 1`. Interpréter l'erreur. Supprimer immédiatement toute ressource créée.
+3. **Groupe à haute disponibilité** : tenter de créer `vm-st<NN>-test-as` dans un groupe `avail-st<NN>-web` AVEC `--zone 2`. Interpréter l'erreur. Supprimer immédiatement toute ressource créée.
 4. **Mise à l'échelle sous charge** : sur une instance de l'API, lancer `timeout 900 yes > /dev/null &` (deux fois, une par vCPU pour une taille à 2 vCPU) et observer l'historique de mise à l'échelle (`az monitor activity-log list --resource-group rg-st<NN>-app --offset 30m`). Expliquer pourquoi une seule instance chargée ne suffit pas toujours à déclencher l'augmentation.
 
 ## Nettoyage

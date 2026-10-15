@@ -8,9 +8,9 @@
 # 6. NSG de snet-app, VMs existantes rattachées au pool, disque de données de web01
 # 7. Contrôles : portail v2 et API à travers lbe-stNN-web
 # Durée : 10 à 20 min. Idempotent : les VMs et le VMSS existants sont conservés.
-# Quota (session d'octobre 2026, 10 vCPU par famille) : taille selon NN, surcharge par VM_SIZE ;
-# web02 et VMSS pour st01 seulement (démonstration), M7_COMPLET=1 pour tous si le quota le permet.
-# Usage : ./deploy.sh <NN>        ou        VM_SIZE=<taille> M7_COMPLET=1 ./deploy.sh <NN>
+# Zones (abonnement de formation : tailles disponibles en zone 2 seulement) : web01 en zone 2,
+# web02 et VMSS sans zone. Taille Standard_B2s_v2, surcharge par VM_SIZE ; M7_COMPLET=0 : web01 seule.
+# Usage : ./deploy.sh <NN>        ou        VM_SIZE=<taille> M7_COMPLET=0 ./deploy.sh <NN>
 set -euo pipefail
 
 NN="${1:?Numéro de stagiaire sur deux chiffres requis (ex. 07)}"
@@ -26,12 +26,8 @@ TAGS=(Projet=Arveo Environnement=Formation "Proprietaire=${ST}")
 DIR="$(cd "$(dirname "$0")" && pwd)"
 LABS="${DIR}/../../labs/module-07"
 PW_FILE="${HOME}/.arveo/web-admin.txt"
-if   [[ -n "${VM_SIZE:-}" ]]; then SIZE="$VM_SIZE"
-elif [[ "$NN" == "01" ]];      then SIZE="Standard_D2s_v7"
-elif (( 10#$NN <= 6 ));        then SIZE="Standard_D2als_v7"
-else                                SIZE="Standard_D2as_v7"
-fi
-if [[ -n "${M7_COMPLET:-}" || "$NN" == "01" ]]; then COMPLET=true; else COMPLET=false; fi
+SIZE="${VM_SIZE:-Standard_B2s_v2}"
+if [[ "${M7_COMPLET:-1}" == 0 ]]; then COMPLET=false; else COMPLET=true; fi
 
 az config set extension.use_dynamic_install=yes_without_prompt -o none 2>/dev/null || true
 
