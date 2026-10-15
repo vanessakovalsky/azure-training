@@ -46,11 +46,12 @@ lyon() {    # lyon "<POWERSHELL COMMAND>": run on vm-stNN-lyon-fs
     --command-id RunPowerShellScript --scripts "$1" \
     --query "value[0].message" -o tsv
 }
-bkitem() {  # bkitem <VM|AzureFileShare> <NAME>: internal names CONT and ITEM of a protected item
-  local BMT=AzureIaasVM; [[ "$1" == "AzureFileShare" ]] && BMT=AzureStorage
-  read -r CONT ITEM < <(az backup item list -g "$RG_SHARED" -v "$VAULT" \
+bkitem() {  # bkitem <VM|AzureFileShare> <NOM> : full names CONT and ITEM (taken from the ID) of a protected item
+  local BMT=AzureIaasVM ID; [[ "$1" == "AzureFileShare" ]] && BMT=AzureStorage
+  ID=$(az backup item list -g "$RG_SHARED" -v "$VAULT" \
     --backup-management-type "$BMT" --workload-type "$1" \
-    --query "[?properties.friendlyName=='$2'] | [0].[properties.containerName, name]" -o tsv)
+    --query "[?properties.friendlyName=='$2'] | [0].id" -o tsv)
+  CONT=$(echo "$ID" | awk -F/ '{print $(NF-2)}'); ITEM=${ID##*/}
   echo "CONT=${CONT} ITEM=${ITEM}"
 }
 echo "$ST $VAULT $SA_FILES $DIAG_SA"
@@ -146,7 +147,7 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
    ```
    Expected result (1 to 2 min; exact format of the internal names `[TO VERIFY]`):
    ```
-   CONT=iaasvmcontainerv2;rg-st07-app;vm-st07-web02 ITEM=VM;iaasvmcontainerv2;rg-st07-app;vm-st07-web02
+   CONT=IaasVMContainer;iaasvmcontainerv2;rg-st07-app;vm-st07-web02 ITEM=VM;iaasvmcontainerv2;rg-st07-app;vm-st07-web02
    InProgress
    ```
 

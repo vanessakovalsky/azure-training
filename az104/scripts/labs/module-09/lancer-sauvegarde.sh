@@ -106,7 +106,8 @@ if [[ "$RUNNING" != "0" ]]; then
 else
   read -r CONT ITEM < <(item)
   JOB=$(az backup protection backup-now -g "$RG_SHARED" -v "$VAULT" \
-    --container-name "$CONT" --item-name "$ITEM" --backup-management-type AzureIaasVM \
+    --container-name "${CONT##*;}" --item-name "vm-${ST}-web01" \
+    --backup-management-type AzureIaasVM --workload-type VM \
     --retain-until "$RETAIN" --query name -o tsv)
   echo "   travail lancé : ${JOB}"
 fi

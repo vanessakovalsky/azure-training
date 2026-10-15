@@ -112,8 +112,8 @@ if [[ -n "$VAULT_ID" ]]; then
     -o tsv 2>/dev/null) || true
 fi
 if [[ -n "$ITEM" ]]; then
-  STATUS=$(az backup protection backup-now -g "$SHARED" -v "$VAULT" --container-name "$CONT" \
-    --item-name "$ITEM" --backup-management-type AzureStorage \
+  STATUS=$(az backup protection backup-now -g "$SHARED" -v "$VAULT" --container-name "${CONT##*;}" \
+    --item-name partage-lyon --backup-management-type AzureStorage --workload-type AzureFileShare \
     --retain-until "$(date -d '+30 days' +%d-%m-%Y)" --query "properties.status" -o tsv 2>/dev/null) \
     || STATUS="non lancé (sauvegarde déjà en cours ?)"
   echo "   travail lancé : ${STATUS}"

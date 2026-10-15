@@ -21,7 +21,7 @@ az config set extension.use_dynamic_install=yes_without_prompt -o none 2>/dev/nu
 
 echo "== Suppression de Bastion et de son IP publique (5 à 10 min)"
 if az network bastion show -g "$HUB" -n "bas-${ST}-hub" -o none 2>/dev/null; then
-  az network bastion delete -g "$HUB" -n "bas-${ST}-hub"
+  az network bastion delete -g "$HUB" -n "bas-${ST}-hub" --yes
   echo "   bas-${ST}-hub supprimé"
 fi
 az network public-ip delete -g "$HUB" -n "pip-${ST}-bastion" 2>/dev/null \

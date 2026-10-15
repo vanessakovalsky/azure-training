@@ -38,8 +38,8 @@ backup_now() {   # backup_now <VM|AzureFileShare> <nom>
   local BMT=AzureIaasVM; [[ "$1" == "AzureFileShare" ]] && BMT=AzureStorage
   local CONT ITEM
   read -r CONT ITEM < <(item "$1" "$2")
-  az backup protection backup-now -g "$SHARED" -v "$VAULT" --container-name "$CONT" \
-    --item-name "$ITEM" --backup-management-type "$BMT" --retain-until "$RETAIN" \
+  az backup protection backup-now -g "$SHARED" -v "$VAULT" --container-name "${CONT##*;}" \
+    --item-name "$2" --backup-management-type "$BMT" --workload-type "$1" --retain-until "$RETAIN" \
     --query "properties.status" -o tsv
 }
 

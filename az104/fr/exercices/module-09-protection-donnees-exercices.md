@@ -46,11 +46,12 @@ lyon() {    # lyon "<COMMANDE POWERSHELL>" : exécution sur vm-stNN-lyon-fs
     --command-id RunPowerShellScript --scripts "$1" \
     --query "value[0].message" -o tsv
 }
-bkitem() {  # bkitem <VM|AzureFileShare> <NOM> : noms internes CONT et ITEM d'un élément protégé
-  local BMT=AzureIaasVM; [[ "$1" == "AzureFileShare" ]] && BMT=AzureStorage
-  read -r CONT ITEM < <(az backup item list -g "$RG_SHARED" -v "$VAULT" \
+bkitem() {  # bkitem <VM|AzureFileShare> <NOM> : noms complets CONT et ITEM (extraits de l'identifiant) d'un élément protégé
+  local BMT=AzureIaasVM ID; [[ "$1" == "AzureFileShare" ]] && BMT=AzureStorage
+  ID=$(az backup item list -g "$RG_SHARED" -v "$VAULT" \
     --backup-management-type "$BMT" --workload-type "$1" \
-    --query "[?properties.friendlyName=='$2'] | [0].[properties.containerName, name]" -o tsv)
+    --query "[?properties.friendlyName=='$2'] | [0].id" -o tsv)
+  CONT=$(echo "$ID" | awk -F/ '{print $(NF-2)}'); ITEM=${ID##*/}
   echo "CONT=${CONT} ITEM=${ITEM}"
 }
 echo "$ST $VAULT $SA_FILES $DIAG_SA"
@@ -144,9 +145,9 @@ st07 rsv-st07-arveo starveost07files2610 starveost07diag
      --container-name "$CONT" --item-name "$ITEM" --backup-management-type AzureIaasVM \
      --retain-until "$(date -d '+30 days' +%d-%m-%Y)" --query "properties.status" -o tsv
    ```
-   Résultat attendu (1 à 2 min ; format exact des noms internes `[À VÉRIFIER]`) :
+   Résultat attendu (1 à 2 min) :
    ```
-   CONT=iaasvmcontainerv2;rg-st07-app;vm-st07-web02 ITEM=VM;iaasvmcontainerv2;rg-st07-app;vm-st07-web02
+   CONT=IaasVMContainer;iaasvmcontainerv2;rg-st07-app;vm-st07-web02 ITEM=VM;iaasvmcontainerv2;rg-st07-app;vm-st07-web02
    InProgress
    ```
 
