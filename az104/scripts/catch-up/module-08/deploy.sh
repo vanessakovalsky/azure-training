@@ -61,7 +61,7 @@ read -r APP_HOST STG_HOST LOGIN ID_ACI < <(az deployment group create \
   --template-file "${DIR}/main.bicep" \
   --parameters numero="$NN" session="$SES" apiUrl="$API_URL" \
   --query "properties.outputs.[appHost.value, stagingHost.value, acrLoginServer.value, identityId.value]" \
-  -o tsv | tr '\n' ' ')
+  -o tsv | tr '\n' ' '; echo)
 echo "   production : ${APP_HOST}"
 echo "   staging    : ${STG_HOST}"
 echo "   registre   : ${LOGIN}"

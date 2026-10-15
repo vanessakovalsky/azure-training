@@ -144,7 +144,7 @@ The script also starts `vm-st<NN>-test-data` (challenge 06.4), attaches a data d
    az storage account show -g "$RG_DATA" -n "$SA_DATA" --expand geoReplicationStats \
      --query "geoReplicationStats.{State:status, LastSync:lastSyncTime}" -o table
    ```
-   Expected result (state `Bootstrap` during the first minutes, then `Live`; timestamp varies):
+   Expected result (timestamp varies). Right after the conversion: `LastSyncTimeUnavailable` error for 25 to 30 min (initial copy to the secondary region); continue with step 6 and lab 06.2, then run the command again:
    ```
    State   LastSync
    ------  -------------------------

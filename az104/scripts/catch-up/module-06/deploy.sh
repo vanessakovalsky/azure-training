@@ -104,7 +104,9 @@ echo "   serveur inscrit : ${SERVER_ID##*/}"
 az deployment group create -g "$RG_DATA" -n rattrapage-m06 \
   --template-file "${DIR}/main.bicep" \
   --parameters "${COMMON[@]}" publicNetworkAccess=Disabled registeredServerId="$SERVER_ID" \
-  --query "properties.outputs.{Compte:dataAccount.value, IP_PE:privateEndpointIp.value}" -o table
+  --query "properties.outputs.{Compte:dataAccount.value}" -o table
+echo "   IP du private endpoint : $(az network nic show -g "$RG_DATA" -n "nic-${ST}-pe-blob" \
+  --query "ipConfigurations[0].privateIPAddress" -o tsv 2>/dev/null || echo 'carte absente')"
 
 echo "== Contrôle"
 az storage account list -g "$RG_DATA" \

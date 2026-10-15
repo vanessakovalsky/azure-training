@@ -107,10 +107,7 @@ resource zoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023
   }
 }
 
-// IP lue sur la carte réseau créée par la plateforme (nommée par customNetworkInterfaceName),
-// par reference() dans une sortie : évaluée en fin de déploiement, après le private endpoint
-// (une ressource « existing » est lue trop tôt : carte absente au premier déploiement)
-// (customDnsConfigs peut être vide quand un groupe de zones DNS est associé)
-output privateEndpointIp string = reference(resourceId('Microsoft.Network/networkInterfaces', 'nic-${prefix}-pe-blob'), '2023-11-01').ipConfigurations[0].properties.privateIPAddress
+// IP du private endpoint : lue par deploy.sh après le déploiement (carte réseau créée par la
+// plateforme en fin d'opération, illisible de façon fiable depuis le modèle au premier déploiement)
 output blobEndpoint string = dataAccount.properties.primaryEndpoints.blob
 output accountName string = dataAccount.name

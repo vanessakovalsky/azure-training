@@ -144,7 +144,7 @@ Le script démarre aussi `vm-st<NN>-test-data` (défi 06.4), attache un disque d
    az storage account show -g "$RG_DATA" -n "$SA_DATA" --expand geoReplicationStats \
      --query "geoReplicationStats.{Etat:status, DerniereSynchro:lastSyncTime}" -o table
    ```
-   Résultat attendu (état `Bootstrap` les premières minutes, puis `Live` ; horodatage variable) :
+   Résultat attendu (horodatage variable). Juste après la conversion : erreur `LastSyncTimeUnavailable` pendant 25 à 30 min (copie initiale vers la région secondaire) ; poursuivre avec l'étape 6 et le lab 06.2, puis relancer la commande :
    ```
    Etat    DerniereSynchro
    ------  -------------------------

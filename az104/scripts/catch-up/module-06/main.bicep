@@ -268,5 +268,4 @@ resource serverEndpoint 'Microsoft.StorageSync/storageSyncServices/syncGroups/se
 }
 
 output dataAccount string = dataAccount.name
-output privateEndpointIp string = dataPrivate.outputs.privateEndpointIp
 output storageSyncServiceId string = sss.id
