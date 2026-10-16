@@ -1,5 +1,5 @@
 #cloud-config
-# cloud-init-web.yaml — serveurs web du portail client Arvéo (vm-stNN-web01, vm-stNN-web02)
+# cloud-init-web.yaml - serveurs web du portail client Arvéo (vm-stNN-web01, vm-stNN-web02)
 # Exécuté UNE FOIS, au premier démarrage : installation de nginx et page v1.
 # La zone est lue sur le service de métadonnées d'instance (IMDS) : « aucune » hors zone.
 # Prérequis : accès sortant à Internet (passerelle NAT ng-stNN-app, lab 07.2).

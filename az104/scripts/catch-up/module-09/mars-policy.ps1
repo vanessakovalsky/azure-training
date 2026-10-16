@@ -1,4 +1,4 @@
-# mars-policy.ps1 — rattrapage du lab 09.3, exécuté SUR vm-stNN-lyon-fs (run-command, SYSTEM)
+# mars-policy.ps1 - rattrapage du lab 09.3, exécuté SUR vm-stNN-lyon-fs (run-command, SYSTEM)
 # Stratégie MARS : F:\Compta, du lundi au vendredi à 21:00, rétention 30 jours ; sauvegarde
 # immédiate. Prérequis : agent inscrit (mars-lyon.sh <NN> --wait). Idempotent.
 $ErrorActionPreference = 'Stop'

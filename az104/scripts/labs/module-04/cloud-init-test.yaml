@@ -1,5 +1,5 @@
 #cloud-config
-# cloud-init-test.yaml — VMs de test du module 4 (vm-stNN-test-web, vm-stNN-test-data)
+# cloud-init-test.yaml - VMs de test du module 4 (vm-stNN-test-web, vm-stNN-test-data)
 # Serveur HTTP minimal (python3 de l'image Ubuntu, aucun accès Internet requis)
 # en écoute sur 80/TCP et 1433/TCP ; la réponse est le nom d'hôte de la VM.
 write_files:

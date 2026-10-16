@@ -1,5 +1,5 @@
 #cloud-config
-# cloud-init-api.yaml — instances de l'API de suivi des colis (vmss-stNN-api, défi 07.5)
+# cloud-init-api.yaml - instances de l'API de suivi des colis (vmss-stNN-api, défi 07.5)
 # nginx écoute UNIQUEMENT sur le port 8080 et renvoie un JSON : service, instance, zone.
 # Exécuté au premier démarrage de CHAQUE instance, y compris celles ajoutées par la mise à l'échelle.
 # Prérequis : accès sortant à Internet (passerelle NAT ng-stNN-app sur snet-app).

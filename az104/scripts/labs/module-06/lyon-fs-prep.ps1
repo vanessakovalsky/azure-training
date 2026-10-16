@@ -1,4 +1,4 @@
-# lyon-fs-prep.ps1 — préparation du serveur de fichiers de Lyon (module 6)
+# lyon-fs-prep.ps1 - préparation du serveur de fichiers de Lyon (module 6)
 # Exécuté SUR vm-stNN-lyon-fs par une commande d'exécution managée (lyon-fs-prep.sh),
 # en tant que SYSTEM, sans interaction. Idempotent : chaque étape vérifie son état.
 #   1. Disque de données initialisé en F: (étiquette « Partages »)

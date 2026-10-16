@@ -1,4 +1,4 @@
-# mars-install.ps1 — exécuté SUR vm-stNN-lyon-fs (commande d'exécution managée « mars-install »,
+# mars-install.ps1 - exécuté SUR vm-stNN-lyon-fs (commande d'exécution managée « mars-install »,
 # compte SYSTEM), lancé par mars-lyon.sh. Ne pas exécuter à la main.
 #   1. Dossier F:\Compta : 6 exports comptables (dossier NON synchronisé par Azure File Sync)
 #   2. Téléchargement et installation silencieuse de l'agent MARS (sortie Internet : natgw-lyon)
